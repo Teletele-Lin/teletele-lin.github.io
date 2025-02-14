@@ -13,6 +13,8 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
     <!-- 默认主题 -->
     <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/lib/themes/vue.css">
+    <!-- Adds the default breadcrumb styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-breadcrumb@latest/dist/breadcrumb.min.css">
 </head>
 
 <body>
@@ -52,9 +54,10 @@
                 namespace: 'Teletele\'s Blog',
             },
             timeUpdater: {
-                text: "<div align='right' width='200px' style='color:gray;font-size:20px'>-------------- 最后更新时间:&emsp;{docsify-updated} --------------</div>",
+                text: "<div align='right' width='200px' style='color:gray;font-size:15px'>更新日期：{docsify-updated}</div>",
                 formatUpdated: "{YYYY} 年 {MM} 月 {DD} 日",
-            },
+                whereToPlace: "bottom",
+            }
         }
     </script>
     <!-- docsify的js依赖 -->
@@ -68,7 +71,7 @@
     <!--在所有的代码块上添加一个简单的Click to copy按钮来允许用户从你的文档中轻易地复制代码-->
     <script src="//cdn.jsdelivr.net/npm/docsify-copy-code/dist/docsify-copy-code.min.js"></script>
     <!-- plugin for time updater -->
-    <script src="https://cdn.jsdelivr.net/npm/docsify-updated/src/time-updater.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/docsify-updated/src/time-updater.min.js"></script>
 </body>
 
 </html>
