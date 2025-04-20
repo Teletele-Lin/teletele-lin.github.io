@@ -70,6 +70,84 @@ pg_ctl -D /home/teletele/PGhome/data -l $PGDATA/start.log start
 ```
 pg_ctl -D /home/teletele/PGhome/data stop
 ```
+
+## docker
+Dockerfile
+```
+FROM ubuntu:22.04
+
+# 设置非交互式安装，防止 apt-get 提示交互
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 替换apt镜像
+RUN sed -i 's@//.*archive.ubuntu.com@//mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list && \
+    sed -i 's@//.*security.ubuntu.com@//mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list
+
+# 更新包列表并安装基本工具和 PostgreSQL 编译依赖
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    gdb \
+    valgrind \
+    flex \
+    bison \
+    libreadline-dev \
+    zlib1g-dev \
+    libssl-dev \
+    clang \
+    lldb \
+    pkg-config \
+    libicu-dev \
+    libxml2-dev \
+    libxslt-dev \
+    perl \
+    python3-dev \
+    tcl-dev \
+    libpam0g-dev \
+    libedit-dev \
+    libselinux1-dev \
+    vim \
+    sudo \
+    wget \
+    libperl-dev \
+    && apt-get clean
+
+# 创建一个非root用户用于开发
+RUN useradd -m developer && \
+    echo "developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# 切换到developer用户
+USER developer
+WORKDIR /home/developer
+
+# 克隆PostgreSQL源码
+#RUN git clone https://github.com/postgres/postgres.git
+RUN wget https://ftp.postgresql.org/pub/source/v17.4/postgresql-17.4.tar.gz
+RUN tar -xvf postgresql-17.4.tar.gz
+RUN mv postgresql-17.4 postgres
+
+# 设置环境变量
+ENV PG_SRC_DIR=/home/developer/postgres
+ENV PGHOME=/home/developer/pg_install
+ENV PGDATA=${PGHOME}/data
+ENV PGLOG=${PGHOME}/run.log
+
+WORKDIR $PG_SRC_DIR
+
+# 编译
+RUN ./configure --prefix=${PGHOME} --enable-debug --with-python --with-perl --with-tcl --with-icu
+RUN make install -sj
+
+# 环境变量
+ENV PATH=$PGHOME/bin:$PATH
+ENV LD_LIBRARY_PATH=$PGHOME/lib:$LD_LIBRARY_PATH
+
+# initdb and run
+RUN initdb -D $PGDATA
+RUN pg_ctl -D $PGDATA -l $PGLOG start
+
+# 暴露端口
+EXPOSE 5432
+```
 # VsCode远程开发与调试
 - 安装C/C++ 扩展
 - 安装gitlens扩展
