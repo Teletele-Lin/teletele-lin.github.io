@@ -141,3 +141,57 @@ pg_ctl -D $PGDATA stop
 ```
 echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 ```
+
+# docker配置参考
+```
+FROM ubuntu:22.04
+
+# 设置非交互式安装，防止 apt-get 提示交互
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 替换apt镜像
+RUN sed -i 's@//.*archive.ubuntu.com@//mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list && \
+    sed -i 's@//.*security.ubuntu.com@//mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list
+
+# 更新包列表并安装基本工具和 PostgreSQL 编译依赖
+RUN apt-get update && apt install -y \
+build-essential libreadline-dev zlib1g-dev flex bison \
+libxml2-dev libxslt-dev libssl-dev libpam0g-dev libedit-dev \
+libselinux1-dev libsystemd-dev tcl-dev python3-dev
+
+# 创建一个非root用户用于开发
+RUN useradd -m developer && \
+    echo "developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# 切换到developer用户
+USER developer
+WORKDIR /home/developer
+
+# 克隆PostgreSQL源码
+RUN git clone https://github.com/postgres/postgres.git
+
+# 设置环境变量
+ENV PG_SRC_DIR=/home/developer/postgres
+ENV PGHOME=/home/developer/pg_install
+ENV PGDATA=${PGHOME}/data
+ENV PGLOG=${PGHOME}/run.log
+
+WORKDIR $PG_SRC_DIR
+
+# 编译
+RUN ./configure --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
+--with-pam --without-ldap --with-libxml --with-libxslt \
+--with-wal-blocksize=16 --with-blocksize=16 --enable-dtrace --enable-debug  
+RUN make install -sj
+
+# 环境变量
+ENV PATH=$PGHOME/bin:$PATH
+ENV LD_LIBRARY_PATH=$PGHOME/lib:$LD_LIBRARY_PATH
+
+# initdb and run
+RUN initdb -D $PGDATA
+RUN pg_ctl -D $PGDATA -l $PGLOG start
+
+# 暴露端口
+EXPOSE 5432
+
+```
