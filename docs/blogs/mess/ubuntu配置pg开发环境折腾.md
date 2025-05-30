@@ -41,9 +41,8 @@ sudo apt install -y build-essential libreadline-dev zlib1g-dev flex bison \
 ```
 ## configure
 ```
-./configure --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
---with-pam --without-ldap --with-libxml --with-libxslt \
---with-wal-blocksize=16 --with-blocksize=16 --enable-dtrace --enable-debug  
+./configure CFLAGS="-fno-omit-frame-pointer -fno-stack-protector" --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
+--with-pam --without-ldap --with-libxml --with-libxslt --enable-debug
 ```
 
 ## 缺啥装啥
@@ -178,9 +177,8 @@ ENV PGLOG=${PGHOME}/run.log
 WORKDIR $PG_SRC_DIR
 
 # 编译
-RUN ./configure --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
---with-pam --without-ldap --with-libxml --with-libxslt \
---with-wal-blocksize=16 --with-blocksize=16 --enable-dtrace --enable-debug  
+RUN ./configure CFLAGS="-fno-omit-frame-pointer -fno-stack-protector" --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
+--with-pam --without-ldap --with-libxml --with-libxslt --enable-debug 
 RUN make install -sj
 
 # 环境变量
