@@ -1,8 +1,9 @@
 # PG性能分析抓取火焰图
 
 ## PG 编译配置
-```
-RUN ./configure CFLAGS="-fno-omit-frame-pointer -fno-stack-protector" --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
+配置开启栈指针编译选项
+```shell
+./configure CFLAGS="-fno-omit-frame-pointer -fno-stack-protector" --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
 --with-pam --without-ldap --with-libxml --with-libxslt --enable-debug
 ```
 ## 下载FlameGraph
@@ -11,7 +12,7 @@ git clone git@github.com:brendangregg/FlameGraph.git
 ```
 
 ## 配置一键抓取脚本
-```
+```shell
 #!/bin/bash
 # Flame Graph Generator with POSIX-compatible Output
 # Usage: ./flame.sh <graph_name> <process_id> <capture_seconds>
@@ -114,7 +115,8 @@ ls -lh "$OUTPUT_DIR"
 
 ## 抓取会话进程的火焰图
 
-```
+```shell
+# sh genGraph.sh 火焰图名称 PID 抓取时间
 sudo sh genGraph.sh test1 134628 5
 ```
 

@@ -1,30 +1,23 @@
-# 准备
-## 禁用软件更新
-## 修改清华源
-## 安装软件
-- 卸载nano，安装vim
-- 安装git
-
+# 准备(可忽略)
 ## 用户设置sudo免密
 ## 配置github域名解析
 ```
 20.205.243.166 github.com
 185.199.108.133 raw.githubusercontent.com
 ```
-
-## Github配置公钥匙，远程登录免密
+## Github配置公钥匙，配置远程登录免密
 ## PS1
 ```
 export PS1="\[\e[1;34m\]# \[\e[1;36m\]\u \[\e[1;0m\]@ \[\e[1;32m\]\h \[\e[1;0m\]in \[\e[1;33m\]\w \[\e[1;0m\][\[\e[1;0m\]\t\[\e[1;0m\]]\n\[\e[1;31m\]$\[\e[0m\] "
 ```
 
-# 编译安装Postgres
+# 编译安装Postgres(正式开始)
 ## 下载postgres源码
 ```
 git clone git@github.com:postgres/postgres.git
 ```
 
-## 配置环境变量
+## 配置环境变量(添加到.bashrc中)
 ```
 export PGHOME=$HOME$/PGhome
 export PGDATA=$PGHOME/data
@@ -32,7 +25,7 @@ export PATH=$PGHOME/bin:$PATH
 export LD_LIBRARY_PATH=$PGHOME/lib:$LD_LIBRARY_PATH
 ```
 
-## 安装一波依赖
+## 安装依赖
 ```
 sudo apt install -y build-essential libreadline-dev zlib1g-dev flex bison \
     libxml2-dev libxslt-dev libssl-dev libpam0g-dev libedit-dev \
@@ -86,7 +79,7 @@ pg_ctl -D $PGDATA stop
             "name": "PGATTACH",
             "type": "cppdbg",
             "request": "attach",
-            "program": "/home/teletele/PGhome/bin/postgres",
+            "program": "/home/teletele/PGhome/bin/postgres", //根据实际情况修改即可
             "processId": "${command:pickProcess}",
             "MIMode": "gdb",
             "setupCommands": [
@@ -139,57 +132,4 @@ pg_ctl -D $PGDATA stop
 ## Superuser access is required to attach to a process. Attaching as superuser can potentially harm your computer.
 ```
 echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-```
-
-# docker配置参考
-```
-FROM ubuntu:22.04
-
-# 设置非交互式安装，防止 apt-get 提示交互
-ENV DEBIAN_FRONTEND=noninteractive
-
-# 替换apt镜像
-RUN sed -i 's@//.*archive.ubuntu.com@//mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list && \
-    sed -i 's@//.*security.ubuntu.com@//mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list
-
-# 更新包列表并安装基本工具和 PostgreSQL 编译依赖
-RUN apt-get update && apt install -y \
-build-essential libreadline-dev zlib1g-dev flex bison \
-libxml2-dev libxslt-dev libssl-dev libpam0g-dev libedit-dev \
-libselinux1-dev libsystemd-dev tcl-dev python3-dev
-
-# 创建一个非root用户用于开发
-RUN useradd -m developer && \
-    echo "developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-# 切换到developer用户
-USER developer
-WORKDIR /home/developer
-
-# 克隆PostgreSQL源码
-RUN git clone https://github.com/postgres/postgres.git
-
-# 设置环境变量
-ENV PG_SRC_DIR=/home/developer/postgres
-ENV PGHOME=/home/developer/pg_install
-ENV PGDATA=${PGHOME}/data
-ENV PGLOG=${PGHOME}/run.log
-
-WORKDIR $PG_SRC_DIR
-
-# 编译
-RUN ./configure CFLAGS="-fno-omit-frame-pointer -fno-stack-protector" --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
---with-pam --without-ldap --with-libxml --with-libxslt --enable-debug 
-RUN make install -sj
-
-# 环境变量
-ENV PATH=$PGHOME/bin:$PATH
-ENV LD_LIBRARY_PATH=$PGHOME/lib:$LD_LIBRARY_PATH
-
-# initdb and run
-RUN initdb -D $PGDATA
-RUN pg_ctl -D $PGDATA -l $PGLOG start
-
-# 暴露端口
-EXPOSE 5432
-
 ```
