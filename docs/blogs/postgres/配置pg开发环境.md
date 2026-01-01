@@ -40,12 +40,18 @@ sudo apt install -y build-essential libreadline-dev zlib1g-dev flex bison \
 
 ## 缺啥装啥
 ```
-sudo apt install llvm llvm-dev clang libclang-dev pkg-config perl libperl-dev systemtap-sdt-dev
+sudo apt install llvm llvm-dev clang libclang-dev pkg-config perl libperl-dev systemtap-sdt-dev libicu-dev
 ```
 
 ## make && install
 ```
 make install -sj
+```
+
+## make test
+```
+# 运行测试用例
+make check -sj
 ```
 
 ## initdb
