@@ -14,12 +14,12 @@ export PS1="\[\e[1;34m\]# \[\e[1;36m\]\u \[\e[1;0m\]@ \[\e[1;32m\]\h \[\e[1;0m\]
 # 编译安装Postgres(正式开始)
 ## 下载postgres源码
 ```
-git clone git@github.com:postgres/postgres.git
+git clone https://git.postgresql.org/git/postgresql.git
 ```
 
 ## 配置环境变量(添加到.bashrc中)
 ```
-export PGHOME=$HOME$/PGhome
+export PGHOME=$HOME/postgres
 export PGDATA=$PGHOME/data
 export PATH=$PGHOME/bin:$PATH
 export LD_LIBRARY_PATH=$PGHOME/lib:$LD_LIBRARY_PATH
@@ -29,18 +29,14 @@ export LD_LIBRARY_PATH=$PGHOME/lib:$LD_LIBRARY_PATH
 ```
 sudo apt install -y build-essential libreadline-dev zlib1g-dev flex bison \
     libxml2-dev libxslt-dev libssl-dev libpam0g-dev libedit-dev \
-    libselinux1-dev libsystemd-dev tcl-dev python3-dev 
-
+    libselinux1-dev libsystemd-dev tcl-dev python3-dev   \
+    llvm llvm-dev clang libclang-dev pkg-config perl libperl-dev systemtap-sdt-dev libicu-dev
 ```
+
 ## configure
 ```
 ./configure CFLAGS="-fno-omit-frame-pointer -fno-stack-protector" --prefix=$PGHOME --with-perl --with-tcl --with-python --with-openssl \
 --with-pam --without-ldap --with-libxml --with-libxslt --enable-debug
-```
-
-## 缺啥装啥
-```
-sudo apt install llvm llvm-dev clang libclang-dev pkg-config perl libperl-dev systemtap-sdt-dev libicu-dev
 ```
 
 ## make && install
@@ -85,7 +81,7 @@ pg_ctl -D $PGDATA stop
             "name": "PGATTACH",
             "type": "cppdbg",
             "request": "attach",
-            "program": "/home/teletele/PGhome/bin/postgres", //根据实际情况修改即可
+            "program": "/home/teletele/postgres/bin/postgres", //根据实际情况修改即可
             "processId": "${command:pickProcess}",
             "MIMode": "gdb",
             "setupCommands": [
