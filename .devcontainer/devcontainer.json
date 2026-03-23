@@ -1,0 +1,21 @@
+{
+  "name": "Docsify",
+  "postCreateCommand": "nohup docsify serve docs > /dev/null 2>&1 &",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "USERNAME": "teletele"
+    }
+  },
+  "remoteUser": "teletele",
+  "forwardPorts": [
+    3000
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "eamodio.gitlens"
+      ]
+    }
+  }
+}
