@@ -14,3 +14,5 @@
 * [AI Chat](/blogs/AIChat/overview.md)
   * [01-什么是自我进化](/blogs/AIChat/01-自我进化是否客观存在？.md)
   * [02-学习的苦与乐](/blogs/AIChat/02-学习的苦与乐.md)
+  * [03-AI产业图谱](/blogs/AIChat/03-AI产业图谱.md)
+  * [04-财富转移之讨论](/blogs/AIChat/04-财富转移之讨论.md)
