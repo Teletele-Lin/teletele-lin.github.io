@@ -1,10 +1,10 @@
 (function () {
     'use strict';
 
-    var catalog = window.TeleteleCatalog;
+    var catalog = null;
     var byPath = new Map();
     var byId = new Map();
-    var root = { id: 'root', path: '/', title: '全部专题', children: catalog.sections };
+    var root = null;
 
     function canonical(path) {
         try { path = decodeURIComponent(path); } catch (error) { /* 保留原始路径。 */ }
@@ -18,7 +18,22 @@
         if (node.id) byId.set(node.id, node);
         if (node.children) node.children.forEach(function (child) { index(child, node); });
     }
-    index(root, null);
+    var catalogReady = window.TeleteleCatalog.ready.then(function (data) {
+        catalog = data;
+        root = { id: 'root', path: '/', title: '全部专题', children: catalog.sections };
+        index(root, null);
+        return catalog;
+    });
+    catalogReady.catch(function () {});
+
+    function syncSearchIndex() {
+        var navigation = document.querySelector('#search-index .sidebar-nav');
+        if (!catalog || !navigation) return;
+        // Docsify 的搜索插件通过此隐藏索引发现页面，不作为可见导航使用。
+        navigation.innerHTML = Array.from(byPath.values()).map(function (node) {
+            return '<a href="' + href(node) + '">' + escapeHTML(node.title) + '</a>';
+        }).join('');
+    }
 
     function escapeHTML(value) {
         return String(value).replace(/[&<>"']/g, function (character) {
@@ -34,11 +49,21 @@
     var folderIcon = '<svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M8 20a5 5 0 0 1 5-5h14l6 7h18a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5V20Z" stroke="currentColor" stroke-width="2.5"/><path d="M8 30h48" stroke="currentColor" stroke-width="2.5"/></svg>';
     var articleIcon = '<svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M17 8h21l11 11v37H17V8Z" stroke="currentColor" stroke-width="2.5"/><path d="M37 8v13h12M25 32h16M25 40h16M25 48h10" stroke="currentColor" stroke-width="2.5"/></svg>';
 
+    function imageURL(value) {
+        if (!value) return '';
+        try {
+            var url = new URL(value, document.baseURI);
+            return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
+        } catch (error) { return ''; }
+    }
+
     function card(node) {
         var isFolder = Boolean(node.children);
+        var image = imageURL(node.coverImage);
         var meta = isFolder ? articleCount(node) + ' 篇文章' : (node.tags || []).slice(0, 2).join(' · ');
         return '<a class="library-card" data-kind="' + (isFolder ? 'folder' : 'article') + '" href="' + href(node) + '">' +
-            '<span class="card-cover tone-' + node.tone + '">' +
+            '<span class="card-cover tone-' + node.tone + (image ? ' has-image' : '') + '">' +
+            (image ? '<img class="cover-image" src="' + escapeHTML(image) + '" alt="" loading="lazy" decoding="async" data-no-zoom><span class="cover-shade" aria-hidden="true"></span>' : '') +
             '<span class="cover-top"><span>' + escapeHTML(node.label || '文章') + '</span><span class="cover-badge">' + (isFolder ? '目录' : escapeHTML(node.status || '文章')) + '</span></span>' +
             '<span class="cover-title">' + escapeHTML(node.cover || node.title) + '</span>' +
             '<span class="cover-symbol">' + (isFolder ? folderIcon : articleIcon) + '</span>' +
@@ -72,7 +97,7 @@
     function moveSearch() {
         var search = document.querySelector('div.search');
         var mount = document.getElementById('search-mount');
-        if (!search || !mount) return;
+        if (!catalog || !search || !mount) return;
         if (!mount.contains(search)) mount.appendChild(search);
         search.querySelector('input').setAttribute('aria-label', '搜索全部文章');
         var results = search.querySelector('.results-panel');
@@ -104,10 +129,19 @@
     }
 
     function install(hook, vm) {
-        hook.mounted(moveSearch);
-        hook.beforeEach(function (content) {
+        hook.mounted(function () { syncSearchIndex(); moveSearch(); });
+        hook.beforeEach(function (content, next) {
+            catalogReady.then(function () {
+                syncSearchIndex();
+                next(render(content));
+            }).catch(function (error) {
+                console.error('目录配置加载失败', error);
+                next('<div class="catalog-error" role="alert"><h1>目录暂时无法加载</h1><p>请检查网络后重新加载页面。</p><button type="button" data-retry-catalog>重新加载</button></div>');
+            });
+        });
+        function render(content) {
             var node = byPath.get(canonical(vm.route.path));
-            content = content.replace(/<div data-catalog="([a-z]+)"><\/div>/g, function (_, id) { return collection(id); });
+            content = content.replace(/<div data-catalog="([a-z][a-z0-9-]*)"><\/div>/g, function (_, id) { return collection(id); });
             content = content.replace('<div data-featured></div>', '<div class="card-grid featured-grid">' + catalog.featured.map(function (path) { return card(byPath.get(path)); }).join('') + '</div>');
             if (!node || node === root) return content;
             var prefix = breadcrumbs(node);
@@ -116,9 +150,18 @@
                 content += '\n\n<footer class="article-footer"><a href="' + href(node.parent) + '">返回「' + escapeHTML(node.parent.title) + '」</a><a href="#/">浏览全部专题</a></footer>';
             }
             return prefix + content;
-        });
+        }
         hook.doneEach(function () {
+            if (!catalog) return;
             moveSearch();
+            document.querySelectorAll('.cover-image').forEach(function (image) {
+                function fallback() {
+                    image.parentElement.classList.remove('has-image');
+                    image.hidden = true;
+                }
+                image.addEventListener('error', fallback, { once: true });
+                if (image.complete && image.naturalWidth === 0) fallback();
+            });
             var node = byPath.get(canonical(vm.route.path));
             var isArticle = Boolean(node && !node.children);
             document.body.classList.toggle('page-article', isArticle);
@@ -179,6 +222,9 @@
             });
             block.querySelector('.filter-empty').hidden = count > 0;
         });
+        document.addEventListener('click', function (event) {
+            if (event.target.closest('[data-retry-catalog]')) location.reload();
+        });
         document.querySelector('.skip-link').addEventListener('click', function (event) {
             var article = document.getElementById('main');
             if (article) {
@@ -190,7 +236,6 @@
     });
 
     window.TeleteleUI = {
-        install: install,
-        searchPaths: Array.from(byPath.keys())
+        install: install
     };
 }());

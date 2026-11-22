@@ -23,6 +23,7 @@
                 <a href="#/blogs/postgres/overview" data-section="postgres">PostgreSQL</a>
                 <a href="#/blogs/mess/overview" data-section="tools">工具与环境</a>
                 <a href="#/blogs/AIChat/overview" data-section="ai">AI 与思考</a>
+                <a href="admin/index.html" target="_blank" rel="noopener noreferrer">内容管理</a>
             </div>
             <div class="header-actions">
                 <button id="search-open" class="search-open" type="button" aria-label="打开全文搜索" disabled>
@@ -38,6 +39,8 @@
         <p class="search-hint">搜索所有专题的标题与正文</p>
         <div id="search-mount"></div>
     </dialog>
+    <!-- 搜索插件的独立索引容器，不受 Docsify 移除侧边栏的时序影响。 -->
+    <aside id="search-index" hidden aria-hidden="true"><div class="sidebar-nav"></div></aside>
     <div id="app">加载中…</div>
     <noscript>请启用 JavaScript 阅读博客，也可以在 <a href="https://github.com/Teletele-Lin/teletele-lin.github.io/tree/main/docs">GitHub</a> 阅读原始文章。</noscript>
     <script src="assets/catalog.js"></script>
@@ -54,14 +57,23 @@
             subMaxLevel: 0,
             mergeNavbar: false,
             nativeEmoji: true,
+            markdown: {
+                renderer: {
+                    image: function (href, title, text) {
+                        // Docsify 4 会把图片路径拼到文章目录；根路径图片应从本站根目录读取。
+                        if (/^\/(?!\/)/.test(href)) href = new URL(href, window.location.origin).href;
+                        return this.origin.image(href, title, text);
+                    }
+                }
+            },
             themeable: { readyTransition: false, responsiveTables: true },
             search: {
                 maxAge: 86400000,
-                paths: window.TeleteleUI.searchPaths,
+                paths: 'auto',
                 placeholder: '搜索标题与正文',
                 noData: '没有找到相关内容，换个关键词试试。',
                 depth: 4,
-                namespace: 'teletele-blog-cards-v1'
+                namespace: 'teletele-blog-cms-v1'
             },
             copyCode: { buttonText: '复制', successText: '已复制', errorText: '复制失败' },
             plugins: [window.TeleteleUI.install]

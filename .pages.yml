@@ -1,0 +1,201 @@
+media:
+  - name: images
+    label: 图片库
+    input: docs/assets/uploads
+    output: /assets/uploads
+    extensions: [jpg, jpeg, png, webp, gif, avif]
+    rename: random
+
+components:
+  card-title:
+    label: 标题
+    type: string
+    required: true
+  card-description:
+    label: 摘要
+    type: text
+    required: true
+  card-path:
+    label: 页面路径
+    type: string
+    required: true
+    pattern:
+      regex: '^/blogs/[^?#]+$'
+      message: 请填写以 /blogs/ 开头的页面路径。
+    description: 与 Markdown 文件对应，例如 /blogs/postgres/查询处理/optimizer，不带 docs 前缀和 .md 扩展名。
+  card-label:
+    label: 分类标签
+    type: string
+  card-cover:
+    label: 封面文字
+    type: string
+    description: 未选择封面图时，显示在色块封面上的文字。
+  card-image:
+    label: 封面图片
+    type: image
+    description: 可上传新图片或从图片库选择；留空时使用文字封面。
+    options:
+      media: images
+  card-order:
+    label: 显示顺序
+    type: number
+    description: 同一目录中按数字从小到大排列，可用 10、20、30 留出插入位置。
+  article-body:
+    label: 正文
+    type: rich-text
+    options:
+      format: markdown
+      switcher: true
+      media: images
+
+content:
+  - name: articles
+    label: 文章正文
+    type: collection
+    path: docs/blogs
+    subfolders: true
+    exclude: [overview.md]
+    # raw + body 字段保留纯 Markdown，不生成 frontmatter。
+    format: raw
+    filename:
+      template: '{year}-{month}-{day}-{hour}{minute}{second}.md'
+      field: create
+    view:
+      primary: name
+      fields: [name, path]
+      layout: tree
+    fields:
+      - name: body
+        component: article-body
+
+  - name: catalog
+    label: 卡片与封面
+    type: file
+    path: docs/assets/catalog.json
+    format: json
+    fields:
+      - name: directories
+        label: 专题与子目录
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: '{title}'
+        fields:
+          - name: id
+            label: 目录标识
+            type: string
+            required: true
+            pattern: '^[a-z][a-z0-9-]*$'
+            description: 唯一标识，例如 postgres、query、tools、ai。已有标识应保持稳定。
+          - name: parent
+            label: 上级目录标识
+            type: string
+            description: 留空为首页专题；子目录填写上级目录标识，例如 postgres。
+          - name: title
+            component: card-title
+          - name: description
+            component: card-description
+          - name: path
+            component: card-path
+          - name: label
+            component: card-label
+          - name: cover
+            component: card-cover
+          - name: coverImage
+            component: card-image
+          - name: order
+            component: card-order
+          - name: tone
+            label: 封面配色
+            type: select
+            options:
+              values:
+                - label: 蓝绿色
+                  value: teal
+                - label: 蓝色
+                  value: blue
+                - label: 紫色
+                  value: violet
+      - name: articles
+        label: 文章卡片
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: '{title}'
+        fields:
+          - name: directory
+            label: 所属目录标识
+            type: string
+            required: true
+            description: 填写上方目录标识，例如 postgres、query、tools 或 ai。
+          - name: title
+            component: card-title
+          - name: description
+            component: card-description
+          - name: path
+            component: card-path
+          - name: label
+            component: card-label
+          - name: cover
+            component: card-cover
+          - name: coverImage
+            component: card-image
+          - name: order
+            component: card-order
+          - name: tags
+            label: 关键词
+            type: string
+            list: true
+          - name: status
+            label: 内容状态
+            type: string
+            description: 可留空；未完成的文章可以填写“待补充”。
+      - name: featured
+        label: 首页推荐阅读
+        type: string
+        list: true
+        description: 填写已登记的文章页面路径，顺序即首页显示顺序。
+        pattern: '^/blogs/[^?#]+$'
+
+  - name: homepage
+    label: 首页内容
+    type: file
+    path: docs/README.md
+    format: code
+
+  - name: overviews
+    label: 专题概览
+    type: group
+    items:
+      - name: postgres-overview
+        label: PostgreSQL 内核
+        type: file
+        path: docs/blogs/postgres/overview.md
+        format: code
+      - name: query-overview
+        label: 查询处理
+        type: file
+        path: docs/blogs/postgres/查询处理/overview.md
+        format: code
+      - name: tools-overview
+        label: 工具与环境
+        type: file
+        path: docs/blogs/mess/overview.md
+        format: code
+      - name: ai-overview
+        label: AI 与思考
+        type: file
+        path: docs/blogs/AIChat/overview.md
+        format: code
+
+settings:
+  content:
+    merge: true
+  commit:
+    templates:
+      create: '[Main]  Create {path}'
+      update: '[Main]  Update {path}'
+      delete: '[Main]  Delete {path}'
+      rename: '[Main]  Rename {oldPath} to {newPath}'

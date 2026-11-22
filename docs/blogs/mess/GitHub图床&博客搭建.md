@@ -30,7 +30,7 @@ https://github.com/wyf9661/typora-free/releases/tag/v0.11.18
 + 选择使用PicGo-Core
 + 点击下载或更新，自动下载PicGo插件
 
-![image-20250209145431220](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/image-20250209145431220.png)
+![image-20250209145431220](/assets/uploads/image-20250209145431220.png)
 
 + 编辑配置文件
 

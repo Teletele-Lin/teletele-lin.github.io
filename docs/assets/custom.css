@@ -141,6 +141,14 @@ button:disabled { cursor: wait; opacity: 0.6; }
 .cover-title { max-width: 90%; font-family: var(--code-font-family); font-size: clamp(1.2rem, 2.2vw, 1.8rem); font-weight: 650; line-height: 1.35; letter-spacing: -0.06em; overflow-wrap: anywhere; }
 .cover-symbol { position: absolute; right: 12px; bottom: 14px; z-index: -1; width: 100px; height: 100px; opacity: 0.13; transform: rotate(-10deg); }
 .cover-symbol svg { width: 100%; height: 100%; }
+.card-cover.has-image { color: #fff; background: #20354b; }
+.card-cover.has-image::before, .card-cover.has-image .cover-symbol { display: none; }
+.markdown-section .cover-image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
+.cover-shade { display: none; }
+.has-image .cover-shade { display: block; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, #07172bb3, #07172b26 45%, #07172bcc); }
+.has-image .cover-top, .has-image .cover-title { text-shadow: 0 1px 4px #0008; }
+.catalog-error { padding: 32px; border: 1px solid var(--border); border-radius: 12px; background: var(--base-background-color); }
+.catalog-error button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; color: var(--theme-color); background: var(--surface); }
 .card-body { display: flex; flex-direction: column; flex: 1; gap: 12px; padding: 20px; }
 .card-title { color: var(--heading-color); font-size: 1.1rem; font-weight: 650; line-height: 1.6; }
 .card-description { color: var(--muted); font-size: 0.875rem; line-height: 1.85; }

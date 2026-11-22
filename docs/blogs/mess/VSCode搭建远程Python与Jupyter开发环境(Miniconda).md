@@ -48,20 +48,20 @@ conda create -n remote python=3.13
 VSCode中的profile类似于conda，用于管理本地编辑器的不同配置，比如你有远程开发Python、远程开发C++等不同的需求，需要用到的插件也会有所不同，使用profile就能够实现本地不同开发环境隔离。推荐在默认profile中安装主题、安装插件Remote-SSH、设置字体、安装AI插件等基本的公共配置。
 ## 创建Python开发使用的profile
 直接从默认配置中复制，或者新建一个profile，专用于远程Python开发环境的本地设置。
-![在这里插入图片描述](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/d313f18d098a445fabef12561f77dfc5.png) 
+![在这里插入图片描述](/assets/uploads/d313f18d098a445fabef12561f77dfc5.png)
 ## 安装SSH插件
 插件分为本地插件和远程插件，在左侧插件管理中，连接到远程服务器后，灰色代表插件只在远程服务器生效。安装完SSH插件后，点击左侧SSH管理，连接到远程服务器
-![在这里插入图片描述](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/fddeeff23d914ce194b1dea8c99ddc48.png)
+![在这里插入图片描述](/assets/uploads/fddeeff23d914ce194b1dea8c99ddc48.png)
 
 左下角绿色SSH表示已经连接到远程服务器，这个时候我们就可以打开远程的工作目录（如果没有，可以创建一个）
-![在这里插入图片描述](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/e029a7526e5b4dae94092863ac7c8618.png)
+![在这里插入图片描述](/assets/uploads/e029a7526e5b4dae94092863ac7c8618.png)
 ## 安装插件与使用
 安装Python、Jupyter两个必要插件，安装完这两个插件后，在运行Python脚本、Jupyter代码cell的时候，就能配置Python的Interpreter
-![在这里插入图片描述](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/615f3fed8ded4252ac7576f27b77ed5b.png)
+![在这里插入图片描述](/assets/uploads/615f3fed8ded4252ac7576f27b77ed5b.png)
 ## 其他插件
 + GitLens：有Git使用需求，推荐安装GitLens插件
 + Cline：集成多个平台API的AI插件
-![在这里插入图片描述](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/5f8c1b64b8c3495f9b1fef20d37eb660.png)
+![在这里插入图片描述](/assets/uploads/5f8c1b64b8c3495f9b1fef20d37eb660.png)
 # 使用
 通过以上步骤，远程Python开发环境基本配置好了，如果使用Jupyter，安装jupyterlab包。打开VSCode终端并切换到remote的conda环境安装即可。
 ```shell
@@ -69,7 +69,7 @@ conda activate remote
 conda install jupyterlab
 ```
 + 配置解释器
-![image-20250930222438656](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/image-20250930222438656.png)
+![image-20250930222438656](/assets/uploads/image-20250930222438656.png)
 + 安装其他包：其他包的安装与jupyterlab类似，统一切换到remote环境后使用conda命令安装
 	```shell
 	(remote) # teletele @ Teletele-Linux in ~/Code/Python-remote [11:53:19]
@@ -102,6 +102,6 @@ conda install jupyterlab
 	# 显示图形
 	plt.show()
 	```
-![image-20250930222354735](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/image-20250930222354735.png)
+![image-20250930222354735](/assets/uploads/image-20250930222354735.png)
 # 总结
 本文主要介绍了Python、Jupter远程开发环境的配置和使用，核心在于环境管理的理念和插件的安装，对环境配置比较感兴趣也可以自行配置SSH免密连接远程服务器。

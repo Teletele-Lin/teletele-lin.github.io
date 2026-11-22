@@ -3,7 +3,7 @@
 ## Summary
 SQL引擎的核心功能为查询处理，其主要结构如下：
 
-![image-20250216164113812](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/image-20250216164113812.png)
+![image-20250216164113812](/assets/uploads/image-20250216164113812.png)
 
 + Parser  
   解析器的主要功能是将原始的SQL文本转化为解析树（Parser Tree），作为分析器的标准输入。只会返回SQL文本中的语法错误，不会返回语义的错误。

@@ -120,4 +120,4 @@ ls -lh "$OUTPUT_DIR"
 sudo sh genGraph.sh test1 134628 5
 ```
 
-![image-20250531142518303](https://raw.githubusercontent.com/Teletele-Lin/cos/main/picgo/image-20250531142518303.png)
+![image-20250531142518303](/assets/uploads/image-20250531142518303.png)
