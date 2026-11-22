@@ -1,81 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <title>Teletele's Blog</title>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-    <meta name="description" content="Description">
-    <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <!-- 设置浏览器图标 -->
-    <link rel="icon" href="https://github.com/fluidicon.png" type="image/x-icon" />
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-    <!-- 默认主题 -->
-    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/lib/themes/vue.css">
-    <!-- Adds the default breadcrumb styling -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-breadcrumb@latest/dist/breadcrumb.min.css">
+    <meta name="description" content="Teletele 的技术博客，记录 PostgreSQL 内核学习、开发工具实践，以及与 AI 的对话和思考。">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f8fafc">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <!-- 固定依赖版本，避免 CDN 自动升级影响页面。 -->
+    <link id="theme-light" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0.9.0/dist/css/theme-simple.css">
+    <link id="theme-dark" rel="stylesheet" media="not all" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0.9.0/dist/css/theme-simple-dark.css">
+    <link rel="stylesheet" href="assets/custom.css">
+    <script src="assets/theme.js"></script>
 </head>
-
 <body>
-    <!-- 定义加载时候的动作 -->
-    <div id="app">加载中...</div>
+    <a class="skip-link" href="#main">跳到正文</a>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换到深色模式">深色模式</button>
+    <div id="app">加载中…</div>
+    <noscript>请启用 JavaScript 阅读博客，也可以在 <a href="https://github.com/Teletele-Lin/teletele-lin.github.io/tree/main/docs">GitHub</a> 阅读原始文章。</noscript>
     <script>
         window.$docsify = {
-            // 项目名称
-            name: 'Teletele\'s Blog',
-            // 仓库地址，点击右上角的Github章鱼猫头像会跳转到此地址
-            repo: 'https://github.com/Teletele-Lin',
-            // 侧边栏支持，默认加载的是项目根目录下的_sidebar.md文件
+            name: '<span class="site-name">Teletele<span class="site-dot">.</span></span><span class="site-tagline">技术 · 实践 · 思考</span>',
+            nameLink: '#/',
             loadSidebar: true,
-            // 导航栏支持，默认加载的是项目根目录下的_navbar.md文件
             loadNavbar: true,
-            // 封面支持，默认加载的是项目根目录下的_coverpage.md文件
-            coverpage: false,
-            // 最大支持渲染的标题层级
-            maxLevel: 5,
-            // 自定义侧边栏后默认不会再生成目录，设置生成目录的最大层级（建议配置为2-4）
-            subMaxLevel: 1,
-            // 小屏设备下合并导航栏到侧边栏
-            mergeNavbar: true,
-            /*搜索相关设置*/
-            search: {
-                maxAge: 86400000,// 过期时间，单位毫秒，默认一天
-                paths: 'auto',// 注意：仅适用于 paths: 'auto' 模式
-                placeholder: '搜索',
-                // 支持本地化
-                placeholder: {
-                    '/zh-cn/': '搜索',
-                    '/': 'Type to search'
-                },
-                noData: '找不到结果',
-                depth: 4,
-                hideOtherSidebarContent: false,
-                namespace: 'Teletele\'s Blog',
+            alias: {
+                '/.*/_sidebar.md': '/_sidebar.md',
+                '/.*/_navbar.md': '/_navbar.md'
             },
-            // timeUpdater: {
-            //     text: "<div align='right' width='200px' style='color:gray;font-size:15px'>更新日期：{docsify-updated}</div>",
-            //     formatUpdated: "{YYYY} 年 {MM} 月 {DD} 日",
-            //     whereToPlace: "bottom",
-            // }
-        }
+            coverpage: false,
+            auto2top: true,
+            maxLevel: 4,
+            subMaxLevel: 3,
+            mergeNavbar: true,
+            nativeEmoji: true,
+            themeable: { readyTransition: false, responsiveTables: true },
+            search: {
+                maxAge: 86400000,
+                paths: 'auto',
+                placeholder: '搜索文章与笔记',
+                noData: '没有找到相关内容，换个关键词试试。',
+                depth: 4,
+                hideOtherSidebarContent: true,
+                namespace: 'teletele-blog-v2'
+            },
+            copyCode: { buttonText: '复制', successText: '已复制', errorText: '复制失败' },
+            plugins: [function (hook) {
+                hook.doneEach(function () {
+                    var article = document.querySelector('.markdown-section');
+                    if (article) {
+                        article.tabIndex = -1;
+                    }
+                    var toggle = document.querySelector('.sidebar-toggle');
+                    if (toggle) toggle.setAttribute('aria-label', '切换文章导航');
+                });
+            }]
+        };
+        document.querySelector('.skip-link').addEventListener('click', function (event) {
+            var article = document.getElementById('main');
+            if (article) {
+                event.preventDefault();
+                event.stopPropagation();
+                article.focus();
+            }
+        });
     </script>
-    <!-- docsify的js依赖 -->
-    <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
-    <!-- 语法高亮 -->
-    <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-c.min.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-cpp.min.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-sql.min.js"></script>
-    <!-- emoji表情支持 -->
-    <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
-    <!-- 图片放大缩小支持 -->
-    <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
-    <!-- 搜索功能支持 -->
-    <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
-    <!--在所有的代码块上添加一个简单的Click to copy按钮来允许用户从你的文档中轻易地复制代码-->
-    <script src="//cdn.jsdelivr.net/npm/docsify-copy-code/dist/docsify-copy-code.min.js"></script>
-    <!-- plugin for time updater -->
-    <!-- <script src="//cdn.jsdelivr.net/npm/docsify-updated/src/time-updater.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/docsify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0.9.0/dist/js/docsify-themeable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-c.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-rust.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/plugins/zoom-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/plugins/search.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@3.0.2/dist/docsify-copy-code.min.js"></script>
 </body>
-
 </html>

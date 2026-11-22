@@ -1,8 +1,5 @@
-<!-- _navbar.md -->
-
-* 链接到我
-  * [关于本人](https://teletele-lin.github.io/#/) 
-  * [Github地址](https://github.com/Teletele-Lin)
-
-* 友情链接
-  * [Docsify](https://docsify.js.org/#/)
+- [首页](/)
+- [PostgreSQL](/blogs/postgres/overview.md)
+- [工具与环境](/blogs/mess/overview.md)
+- [AI 与思考](/blogs/AIChat/overview.md)
+- [GitHub](https://github.com/Teletele-Lin)
