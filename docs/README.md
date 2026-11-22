@@ -7,43 +7,11 @@
 
 ## 探索专题
 
-<div class="topic-grid">
-  <a class="topic-card" href="#/blogs/postgres/overview">
-    <span class="topic-label">数据库</span>
-    <span class="topic-title">PostgreSQL 内核</span>
-    <span class="topic-description">沿着一条 SQL 的执行路径，学习解析、优化与执行，也记录调试和性能分析的实践。</span>
-    <span class="topic-meta">源码阅读 · 查询处理 · 性能分析</span>
-  </a>
-  <a class="topic-card topic-card--tools" href="#/blogs/mess/overview">
-    <span class="topic-label">开发实践</span>
-    <span class="topic-title">工具与环境</span>
-    <span class="topic-description">搭建顺手的开发环境，记录 VS Code 远程开发、Python、Rust，以及这个博客的搭建过程。</span>
-    <span class="topic-meta">远程开发 · 环境配置 · 博客搭建</span>
-  </a>
-  <a class="topic-card topic-card--ai" href="#/blogs/AIChat/overview">
-    <span class="topic-label">对话与观察</span>
-    <span class="topic-title">AI 与思考</span>
-    <span class="topic-description">关于学习、自我进化、AI 产业和财富转移的对话。保留问题，也保留思考的过程。</span>
-    <span class="topic-meta">AI 对话 · 学习成长 · 产业观察</span>
-  </a>
-</div>
+<div data-catalog="root"></div>
 
 ## 从这里开始
 
-<div class="reading-list">
-  <a class="reading-item" href="#/blogs/postgres/查询处理/exec_query">
-    <strong>一条 SQL 是怎样执行的？</strong>
-    <span>从查询处理流程入手，理解 PostgreSQL 的 SQL 执行路径。</span>
-  </a>
-  <a class="reading-item" href="#/blogs/mess/VSCode搭建远程Python与Jupyter开发环境(Miniconda)">
-    <strong>搭建远程 Python 与 Jupyter 开发环境</strong>
-    <span>用 VS Code 和 Miniconda 配置远程开发环境。</span>
-  </a>
-  <a class="reading-item" href="#/blogs/AIChat/03-AI产业图谱">
-    <strong>AI 产业图谱</strong>
-    <span>从编程工具到应用形态，梳理 AI 产业的不同方向。</span>
-  </a>
-</div>
+<div data-featured></div>
 
 ## 写给自己
 

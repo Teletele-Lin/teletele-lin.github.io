@@ -15,55 +15,57 @@
 </head>
 <body>
     <a class="skip-link" href="#main">跳到正文</a>
-    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换到深色模式">深色模式</button>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="site-brand" href="#/" aria-label="Teletele 博客首页">Teletele<span>.</span></a>
+            <div class="section-nav" role="navigation" aria-label="专题导航">
+                <a href="#/" data-section="root">全部专题</a>
+                <a href="#/blogs/postgres/overview" data-section="postgres">PostgreSQL</a>
+                <a href="#/blogs/mess/overview" data-section="tools">工具与环境</a>
+                <a href="#/blogs/AIChat/overview" data-section="ai">AI 与思考</a>
+            </div>
+            <div class="header-actions">
+                <button id="search-open" class="search-open" type="button" aria-label="打开全文搜索" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.7"/></svg>
+                    <span>搜索文章</span><kbd>/</kbd>
+                </button>
+                <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换到深色模式">深色模式</button>
+            </div>
+        </div>
+    </header>
+    <dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title">
+        <div class="search-dialog-heading"><h2 id="search-title">搜索全部文章</h2><button id="search-close" type="button">关闭</button></div>
+        <p class="search-hint">搜索所有专题的标题与正文</p>
+        <div id="search-mount"></div>
+    </dialog>
     <div id="app">加载中…</div>
     <noscript>请启用 JavaScript 阅读博客，也可以在 <a href="https://github.com/Teletele-Lin/teletele-lin.github.io/tree/main/docs">GitHub</a> 阅读原始文章。</noscript>
+    <script src="assets/catalog.js"></script>
+    <script src="assets/navigation.js"></script>
     <script>
         window.$docsify = {
-            name: '<span class="site-name">Teletele<span class="site-dot">.</span></span><span class="site-tagline">技术 · 实践 · 思考</span>',
-            nameLink: '#/',
-            loadSidebar: true,
-            loadNavbar: true,
-            alias: {
-                '/.*/_sidebar.md': '/_sidebar.md',
-                '/.*/_navbar.md': '/_navbar.md'
-            },
+            name: '',
+            loadSidebar: false,
+            hideSidebar: true,
+            loadNavbar: false,
             coverpage: false,
             auto2top: true,
             maxLevel: 4,
-            subMaxLevel: 3,
-            mergeNavbar: true,
+            subMaxLevel: 0,
+            mergeNavbar: false,
             nativeEmoji: true,
             themeable: { readyTransition: false, responsiveTables: true },
             search: {
                 maxAge: 86400000,
-                paths: 'auto',
-                placeholder: '搜索文章与笔记',
+                paths: window.TeleteleUI.searchPaths,
+                placeholder: '搜索标题与正文',
                 noData: '没有找到相关内容，换个关键词试试。',
                 depth: 4,
-                hideOtherSidebarContent: true,
-                namespace: 'teletele-blog-v2'
+                namespace: 'teletele-blog-cards-v1'
             },
             copyCode: { buttonText: '复制', successText: '已复制', errorText: '复制失败' },
-            plugins: [function (hook) {
-                hook.doneEach(function () {
-                    var article = document.querySelector('.markdown-section');
-                    if (article) {
-                        article.tabIndex = -1;
-                    }
-                    var toggle = document.querySelector('.sidebar-toggle');
-                    if (toggle) toggle.setAttribute('aria-label', '切换文章导航');
-                });
-            }]
+            plugins: [window.TeleteleUI.install]
         };
-        document.querySelector('.skip-link').addEventListener('click', function (event) {
-            var article = document.getElementById('main');
-            if (article) {
-                event.preventDefault();
-                event.stopPropagation();
-                article.focus();
-            }
-        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/docsify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0.9.0/dist/js/docsify-themeable.min.js"></script>
