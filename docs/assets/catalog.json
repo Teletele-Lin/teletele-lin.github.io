@@ -83,7 +83,7 @@
       "cover": "EXPLAIN",
       "label": "可视化",
       "path": "/blogs/postgres/可视化",
-      "description": "在 GDB 和 psql 中查看解析树与查询计划，让内部结构更直观。",
+      "description": "用浏览器工具绘制从 GDB 或 PostgreSQL 日志取得的解析树、查询树和计划树。",
       "tags": [
         "查询计划",
         "GDB"

@@ -12,6 +12,10 @@ python3 -m http.server 3000 --directory docs
 
 打开 <http://localhost:3000/>。已安装 Docsify CLI 时，也可以运行 `docsify serve docs`。
 
+## PostgreSQL 节点树可视化
+
+「解析与计划可视化」文章链接到 `/tools/pg-node2graph/index.html`。工具来自 [PGNode2Graph-static 的 `36d572d` 版本](https://github.com/Teletele-Lin/PGNode2Graph-static/tree/36d572d81bfe35962489a1bc055aaf5e547a899f)，部署文件位于 `docs/tools/pg-node2graph/`，其中的 HTML 增加了返回教程的链接和博客图标。更新时可重新同步源项目的 `dist/`，并保留这两处集成。
+
 ## 开通 Pages CMS
 
 1. 将本次改动提交并推送到博客仓库的 `main` 分支。CMS 读取远程仓库中的 `.pages.yml`，不会读取本地未推送的文件。

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="在浏览器里查看 PostgreSQL 的解析树、查询树和执行计划树。">
+    <title>PGNode2Graph · PostgreSQL 节点树可视化</title>
+    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./styles.css">
+    <script defer src="./vendor/viz-global.js"></script>
+    <script defer src="./node2dot.js"></script>
+    <script defer src="./app.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="page-width header-content">
+            <a class="brand" href="./index.html">PGNode<span>2</span>Graph</a>
+            <span class="local-note">数据仅在本机浏览器处理</span>
+        </div>
+    </header>
+
+    <main class="page-width">
+        <div class="intro">
+            <h1>PostgreSQL 节点树可视化</h1>
+            <p>查看解析树、查询树和执行计划树的字段与节点关系。</p>
+            <p><a href="../../#/blogs/postgres/可视化">返回可视化教程</a></p>
+        </div>
+
+        <section class="panel input-panel" aria-labelledby="input-title">
+            <div class="panel-heading">
+                <h2 id="input-title"><label for="source">节点文本</label></h2>
+                <button class="button subtle" type="button" id="load-example">载入示例</button>
+            </div>
+            <form id="source-form">
+                <p class="hint" id="source-hint">粘贴调试日志或 <code>nodeToString()</code> 的输出。</p>
+                <textarea id="source" aria-describedby="source-hint" spellcheck="false" autocapitalize="off" wrap="off" required></textarea>
+                <div class="form-actions">
+                    <label class="checkbox"><input type="checkbox" id="skip-empty" checked> 隐藏空值、false 和 0</label>
+                    <div class="toolbar form-buttons">
+                        <button class="button" type="button" id="reopen-graph" aria-haspopup="dialog" aria-controls="graph-viewer" hidden>查看上次图形</button>
+                        <button class="button primary" type="submit" id="generate">生成图形</button>
+                    </div>
+                </div>
+                <p class="status" id="status" role="status"></p>
+            </form>
+        </section>
+
+        <section class="panel history-panel" aria-labelledby="history-title">
+            <div class="panel-heading">
+                <div>
+                    <h2 id="history-title" tabindex="-1">本机历史</h2>
+                    <p class="hint">在当前浏览器中保留最近 12 次手动生成的图。</p>
+                </div>
+                <button class="button" id="clear-history" type="button" hidden>清空历史</button>
+            </div>
+            <p id="history-empty" class="hint" role="status">暂无历史记录。</p>
+            <ul id="history-list"></ul>
+        </section>
+    </main>
+    <dialog class="graph-viewer" id="graph-viewer" aria-label="展开的节点图">
+        <section class="graph-panel" id="graph-panel" aria-labelledby="graph-title">
+            <div class="panel-heading graph-heading">
+                <div>
+                    <h2 id="graph-title">节点图</h2>
+                    <p class="hint metric" id="graph-metric"></p>
+                </div>
+                <div class="toolbar">
+                    <button class="button" id="copy-dot" type="button">复制 DOT</button>
+                    <button class="button" id="export-svg" type="button">导出 SVG</button>
+                    <button class="button" id="fullscreen-graph" type="button" hidden>浏览器全屏</button>
+                    <button class="button subtle" id="close-graph" type="button" autofocus>返回编辑</button>
+                </div>
+            </div>
+            <div class="graph-viewport" id="graph-viewport" tabindex="0" aria-label="节点图画布">
+                <div id="graph-surface"></div>
+            </div>
+            <div class="graph-footer">
+                <div class="graph-info">
+                    <p class="hint" id="selection">点击节点以查看连接</p>
+                    <p class="hint">Ctrl + 滚轮缩放 · 拖动平移</p>
+                    <p class="hint" id="graph-feedback" role="status"></p>
+                </div>
+                <div class="toolbar zoom-tools" role="group" aria-label="缩放图形">
+                    <button class="button zoom" id="zoom-out" type="button" aria-label="缩小">−</button>
+                    <output id="zoom-level"></output>
+                    <button class="button zoom" id="zoom-in" type="button" aria-label="放大">+</button>
+                    <button class="button" id="reset-zoom" type="button" aria-label="恢复 100% 并定位根节点">100%</button>
+                    <button class="button" id="fit-graph" type="button">适应窗口</button>
+                </div>
+            </div>
+        </section>
+    </dialog>
+</body>
+</html>
