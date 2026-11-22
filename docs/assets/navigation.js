@@ -129,6 +129,18 @@
     }
 
     function install(hook, vm) {
+        hook.init(function () {
+            // 正文渲染和搜索索引共用 Marked，跳过 Pages CMS 的标题注释。
+            window.marked.use({
+                tokenizer: {
+                    html: function (source) {
+                        var metadata = /^<!--\r?\ntitle:[\s\S]*?\r?\n-->(?:\r?\n|$)/.exec(source);
+                        if (!metadata) return false;
+                        return { type: 'space', raw: metadata[0] };
+                    }
+                }
+            });
+        });
         hook.mounted(function () { syncSearchIndex(); moveSearch(); });
         hook.beforeEach(function (content, next) {
             catalogReady.then(function () {

@@ -55,16 +55,21 @@ content:
     path: docs/blogs
     subfolders: true
     exclude: [overview.md]
-    # raw + body 字段保留纯 Markdown，不生成 frontmatter。
-    format: raw
+    # CMS 读取注释中的标题，Docsify 将注释隐藏。
+    format: yaml-frontmatter
+    delimiters: ['<!--', '-->']
     filename:
       template: '{year}-{month}-{day}-{hour}{minute}{second}.md'
       field: create
     view:
-      primary: name
-      fields: [name, path]
+      primary: title
+      fields: [title]
       layout: tree
     fields:
+      - name: title
+        label: 文章标题
+        type: string
+        required: true
       - name: body
         component: article-body
 

@@ -1,3 +1,7 @@
+<!--
+title: "远程 Rust 开发"
+-->
+
 # 环境介绍
 > 本文通过WSL(Debain)环境配置rust远程开发环境，apt源和ssh已配置完成
 
