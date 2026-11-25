@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { build } = require('../docs/assets/catalog.js');
+const { build, formatDateTime, isMinuteTimestamp } = require('../docs/assets/catalog.js');
 const data = require('../docs/assets/catalog.json');
 const clone = () => structuredClone(data);
 
@@ -74,4 +74,64 @@ test('invalid document shapes, directory IDs and traversal paths are rejected', 
     assert.throws(() => build(first), /唯一/);
     const second = clone(); second.articles[0].path = '/blogs/../assets/file';
     assert.throws(() => build(second), /有效的文章路径/);
+});
+
+test('all articles have lifecycle times at minute precision and inherit the default author', () => {
+    const tree = build(data);
+    assert.equal(tree.site.author, 'Teletele');
+    assert.equal(tree.site.timezone, 'Asia/Shanghai');
+    for (const article of flatten(tree.sections).filter(node => !node.children)) {
+        assert.ok(isMinuteTimestamp(article.createdAt), article.title);
+        assert.ok(isMinuteTimestamp(article.updatedAt), article.title);
+        assert.ok(article.updatedAt >= article.createdAt);
+        assert.ok(article.author);
+    }
+    assert.equal(formatDateTime('2026-11-22T17:41Z', 'Asia/Shanghai'), '2026-11-23 01:41');
+    assert.equal(formatDateTime('2025-02-09T07:30Z', 'UTC'), '2025-02-09 07:30');
+    assert.equal(isMinuteTimestamp('2025-02-30T07:30Z'), false);
+    assert.equal(isMinuteTimestamp('2025-02-09T07:30:55Z'), false);
+});
+
+test('catalog validates times, accepts older entries without dates, and supports an author override', () => {
+    const input = clone();
+    input.articles[0].author = 'Guest';
+    assert.equal(flatten(build(input).sections).find(n => n.path === input.articles[0].path).author, 'Guest');
+    input.articles[0].updatedAt = '2000-01-01T00:00Z';
+    assert.throws(() => build(input), /更新时间不能早于/);
+    input.articles[0].updatedAt = 'not a date';
+    assert.throws(() => build(input), /UTC 分钟格式/);
+    delete input.articles[0].createdAt; delete input.articles[0].updatedAt; delete input.site;
+    assert.equal(build(input).site.author, 'Teletele');
+    const invalidSite = clone(); invalidSite.site.timezone = 'Invalid/Zone';
+    assert.throws(() => build(invalidSite), /未知的时区/);
+});
+
+test('blog renders author and minute timestamps on article header and update time on article cards', async () => {
+    const vm = require('node:vm');
+    const catalog = require('../docs/assets/catalog.js');
+    const input = clone();
+    input.articles[0].author = 'Guest <Writer>';
+    const target = input.articles[0];
+    const site = { ...catalog, ready: Promise.resolve(catalog.build(input)) };
+    const context = vm.createContext({
+        window: { TeleteleCatalog: site },
+        document: { addEventListener() {}, querySelector() { return null; }, baseURI: 'https://teletele-lin.github.io/' },
+        console, URL
+    });
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../docs/assets/navigation.js'), 'utf8'), context);
+    let before;
+    const route = { path: target.path };
+    context.window.TeleteleUI.install({
+        init() {}, mounted() {}, doneEach() {}, beforeEach(callback) { before = callback; }
+    }, { route });
+    const result = await new Promise(resolve => before('# Test', resolve));
+    assert.match(result, /class="article-author">Guest &lt;Writer&gt;/);
+    assert.ok(result.includes('创建于 <time datetime="' + target.createdAt + '"'));
+    assert.ok(result.includes('最近更新于 <time datetime="' + target.updatedAt + '"'));
+    assert.ok(result.includes(formatDateTime(target.updatedAt, input.site.timezone)));
+    route.path = input.directories.find(d => d.id === target.directory).path;
+    const cards = await new Promise(resolve => before('<div data-catalog="' + target.directory + '"></div>', resolve));
+    assert.match(cards, /class="card-date"/);
+    assert.ok(cards.includes('更新于 <time datetime="' + target.updatedAt + '"'));
+    assert.doesNotMatch(cards, /class="article-author"/);
 });

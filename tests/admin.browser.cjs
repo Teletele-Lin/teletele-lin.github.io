@@ -61,7 +61,10 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         await page.locator('#article-form').waitFor({ state: 'visible' });
         assert.equal(await page.locator('#article-title').inputValue(), '优化器');
         assert.match(await page.locator('#article-body').inputValue(), /GDB/);
+        assert.match(await page.locator('#article-dates').textContent(), /创建于 \d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+        assert.equal(await page.locator('#article-author').getAttribute('placeholder'), 'Teletele');
 
+        await page.clock.setFixedTime(new Date('2026-11-26T01:20:59Z'));
         await page.locator('#new-article').click();
         await page.locator('#article-title').fill('测试新文章');
         await page.locator('#article-description').fill('测试摘要');
@@ -78,6 +81,18 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         assert.match(mock.text(article), /title: "测试新文章"/);
         assert.ok(JSON.parse(mock.text(catalogPath)).featured.includes('/blogs/postgres/测试新文章'));
         assert.equal(mock.requests.filter(r => r.method === 'PATCH').length, 1);
+        const getArticle = () => JSON.parse(mock.text(catalogPath)).articles.find(a => a.path === '/blogs/postgres/测试新文章');
+        assert.equal(getArticle().createdAt, '2026-11-26T01:20Z');
+        assert.equal(getArticle().updatedAt, '2026-11-26T01:20Z');
+        assert.equal(Object.hasOwn(getArticle(), 'author'), false);
+        assert.match(await page.locator('#article-dates').textContent(), /2026-11-26 09:20/);
+        await page.clock.setFixedTime(new Date('2026-11-26T01:23:51Z'));
+        await page.locator('#article-author').fill('Guest');
+        await page.locator('#article-description').fill('修改卡片摘要');
+        await page.locator('#article-form button[type=submit]').click();
+        await page.locator('#busy-indicator').waitFor({ state: 'hidden' });
+        assert.equal(getArticle().author, 'Guest');
+        assert.equal(getArticle().updatedAt, '2026-11-26T01:20Z');
         if (process.env.CMS_SCREENSHOT_DIR) await page.screenshot({ path: process.env.CMS_SCREENSHOT_DIR + '/article.png', fullPage: true });
 
         await page.locator('[data-view=media]').click();
@@ -109,6 +124,7 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         await page.locator('#article-list button').filter({ hasText: '测试新文章' }).click();
         await page.locator('#article-form').waitFor({ state: 'visible' });
         await page.locator('#article-body').focus();
+        await page.clock.setFixedTime(new Date('2026-11-26T01:24:27Z'));
         await page.locator('#article-body').evaluate(node => { node.setSelectionRange(node.value.length, node.value.length); });
         await paste('#article-body');
         const inserted = await page.locator('#article-body').inputValue();
@@ -122,6 +138,9 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         await page.locator('#article-form button[type=submit]').click();
         await page.locator('#busy-indicator').waitFor({ state: 'hidden' });
         assert.match(mock.text(article), /raw\.githubusercontent\.com/);
+        assert.equal(getArticle().createdAt, '2026-11-26T01:20Z');
+        assert.equal(getArticle().updatedAt, '2026-11-26T01:24Z');
+        assert.equal(getArticle().author, 'Guest');
 
         await page.locator('[data-view=topics]').click();
         await page.locator('#new-topic').click();

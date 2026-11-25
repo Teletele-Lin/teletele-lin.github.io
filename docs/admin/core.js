@@ -37,6 +37,17 @@
         const header = metadata && /^title\s*:/m.test(metadata) ? metadata.replace(/^title\s*:.*$/m, () => line) : line;
         return '<!--\n' + header + '\n-->\n\n' + body;
     }
+    const minuteTimestamp = value => new Date(value).toISOString().slice(0, 16) + 'Z';
+    function articleLifecycle(previous, oldArticle, title, body, historical = {}, now = new Date()) {
+        const timestamp = minuteTimestamp(now);
+        const createdAt = previous?.createdAt || historical.createdAt || timestamp;
+        const previousUpdate = previous?.updatedAt || historical.updatedAt || createdAt;
+        const normalizeBody = value => value.replace(/\r\n/g, '\n');
+        const changed = !oldArticle || oldArticle.title !== title || normalizeBody(oldArticle.body) !== normalizeBody(body);
+        // Never move dates backward, even if a device clock is slightly behind.
+        const updatedAt = [createdAt, previousUpdate, ...(changed ? [timestamp] : [])].sort().at(-1);
+        return { createdAt, updatedAt };
+    }
     function markdownImage(path, kind = 'raw') {
         const alt = basename(path).replace(/[\\\[\]]/g, '\\$&').replace(/[\r\n]/g, ' ');
         const url = kind === 'site' ? '/' + encodePath(path.slice(5)) : rawUrl(path);
@@ -62,6 +73,7 @@
         const next = structuredClone(catalog);
         const index = next.articles.findIndex(a => a.path === route);
         const entry = { ...(index >= 0 ? next.articles[index] : {}), ...data, path: route };
+        if (Object.hasOwn(data, 'author') && !data.author) delete entry.author;
         if (index < 0) next.articles.push(entry); else next.articles[index] = entry;
         if (featured && !next.featured.includes(route)) next.featured.push(route);
         if (!featured) next.featured = next.featured.filter(p => p !== route);
@@ -120,6 +132,23 @@
             if (blob.encoding !== 'base64') throw new Error('不支持的文件编码。');
             return base64ToText(blob.content);
         }
+        async historyTimes(path) {
+            // Only used when registering a previously uncatalogued or undated
+            // file. The local migration follows historic renames more precisely.
+            const commits = [];
+            for (let page = 1; ; page++) {
+                const params = new URLSearchParams({ path, sha: this.snapshot.head, per_page: '100', page: String(page) });
+                const batch = await this.request('/commits?' + params);
+                commits.push(...batch);
+                if (batch.length < 100) break;
+            }
+            if (!commits.length) throw new Error('找不到该文件的 Git 历史，无法补录文章时间。');
+            const structural = new Set(['75bda55b3a76d92eb766047127e30f180402b650', 'd49aec4e04f35cab0826282dbc2eec79d2f38f45']);
+            const createdAt = minuteTimestamp(commits.at(-1).commit.author.date);
+            const last = commits.find(commit => !structural.has(commit.sha));
+            const updatedAt = last ? minuteTimestamp(last.commit.author.date) : createdAt;
+            return { createdAt, updatedAt: updatedAt < createdAt ? createdAt : updatedAt };
+        }
         async commit(changes, message) {
             const old = this.snapshot;
             if (!old) throw new Error('尚未加载仓库。');
@@ -159,7 +188,7 @@
         }
         logout() { this.#token = ''; this.snapshot = null; }
     }
-    const exported = { OWNER, REPO, BRANCH, CATALOG, UPLOADS, IMAGE_TYPES, GitHub, rawUrl, articleFile, articleRoute, directoryFolder, basename, isArticle, isImage, filename, suggestedFilename, extractArticle, serializeArticle, markdownImage, imageName, catalogText, upsertArticle, removeArticle, encodePath, editablePath };
+    const exported = { OWNER, REPO, BRANCH, CATALOG, UPLOADS, IMAGE_TYPES, GitHub, rawUrl, articleFile, articleRoute, directoryFolder, basename, isArticle, isImage, filename, suggestedFilename, extractArticle, serializeArticle, minuteTimestamp, articleLifecycle, markdownImage, imageName, catalogText, upsertArticle, removeArticle, encodePath, editablePath };
     if (typeof module === 'object' && module.exports) module.exports = exported;
     else global.CMSCore = exported;
 })(typeof window === 'undefined' ? globalThis : window);

@@ -150,6 +150,7 @@ button:disabled { cursor: wait; opacity: 0.6; }
 .catalog-error { padding: 32px; border: 1px solid var(--border); border-radius: 12px; background: var(--base-background-color); }
 .catalog-error button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; color: var(--theme-color); background: var(--surface); }
 .card-body { display: flex; flex-direction: column; flex: 1; gap: 12px; padding: 20px; }
+.card-date { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 .card-title { color: var(--heading-color); font-size: 1.1rem; font-weight: 650; line-height: 1.6; }
 .card-description { color: var(--muted); font-size: 0.875rem; line-height: 1.85; }
 .card-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 8px; color: var(--muted); font-size: 0.875rem; }
@@ -164,7 +165,11 @@ button:disabled { cursor: wait; opacity: 0.6; }
 .page-article .content { background: var(--base-background-color); }
 .page-article .markdown-section { max-width: 920px; padding: 32px 44px 64px; }
 .article-toolbar { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 0; margin-bottom: 24px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 0.875rem; }
-.article-toolbar > span { color: var(--muted); }
+.article-heading-meta { min-width: 0; }
+.article-bar-title { color: var(--base-color); font-weight: 650; }
+.article-meta { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 15px; row-gap: 4px; margin-top: 6px; color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.article-meta .article-author { color: var(--theme-color); font-weight: 600; }
+.time-label { white-space: nowrap; }
 .article-toolbar a { flex-shrink: 0; }
 .article-outline { margin: 0 0 28px; padding: 12px 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 0.875rem; }
 .article-outline summary { cursor: pointer; color: var(--theme-color); }

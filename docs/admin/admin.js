@@ -178,6 +178,8 @@
     function fillArticle(item, source = '') {
         const article = C.extractArticle(source);
         state.article = { file: item.file || null, metadata: article.metadata, registered: item.registered || false };
+        const site = window.TeleteleCatalog.siteSettings(state.catalog.site);
+        const formatTime = value => window.TeleteleCatalog.formatDateTime(value, site.timezone);
         $('article-empty').hidden = true; $('article-form').hidden = false;
         $('article-mode').textContent = item.file ? 'EDIT ARTICLE' : 'NEW ARTICLE';
         $('article-heading').textContent = item.file ? '编辑文章' : '新建文章';
@@ -189,8 +191,13 @@
         $('article-filename').readOnly = !!item.file; state.filenameEdited = !!item.file;
         for (const [key, value] of Object.entries({
             description: item.description, label: item.label, cover: item.cover, 'cover-image': item.coverImage,
-            tags: (item.tags || []).join(', '), order: item.order ?? 10, status: item.status
+            tags: (item.tags || []).join(', '), order: item.order ?? 10, status: item.status, author: item.author
         })) set('article-' + key, value);
+        $('article-author').placeholder = site.author;
+        $('article-dates').textContent = item.createdAt
+            ? '创建于 ' + formatTime(item.createdAt) + ' · 更新于 ' + formatTime(item.updatedAt || item.createdAt)
+            : item.file ? '保存时自动补录历史时间' : '首次保存时自动记录时间';
+        $('article-dates').title = site.timezone;
         $('article-featured').checked = state.catalog.featured.includes(item.path);
         set('article-body', article.body);
         updateArticlePath(); renderPreview(); dirty(false); renderArticles();
@@ -278,16 +285,23 @@
             const path = articleTarget(); const route = C.articleRoute(path);
             if (!state.article.file && (files().has(path) || state.catalog.articles.some(a => a.path === route))) throw new Error('文件名已存在，请修改文件名。');
             const title = val('article-title'); if (!title) throw new Error('请填写标题。');
+            const previous = state.catalog.articles.find(item => item.path === route);
+            const oldSource = files().has(path) ? await state.client.readText(path) : null;
+            const old = oldSource === null ? null : C.extractArticle(oldSource);
+            if (old) old.title = previous?.title || old.title || C.basename(path).replace(/\.md$/, '');
+            const newBody = $('article-body').value;
+            const historical = old && (!previous?.createdAt || !previous?.updatedAt) ? await state.client.historyTimes(path) : {};
             const card = {
                 title, directory: val('article-directory'), description: val('article-description'),
                 label: val('article-label'), cover: val('article-cover'), coverImage: validCover(val('article-cover-image')),
                 tags: val('article-tags').split(/[,，]/).map(x => x.trim()).filter(Boolean),
-                order: number('article-order'), status: val('article-status')
+                order: number('article-order'), status: val('article-status'), author: val('article-author'),
+                ...C.articleLifecycle(previous, old, title, newBody, historical)
             };
             const next = C.upsertArticle(state.catalog, route, card, $('article-featured').checked);
-            const body = C.serializeArticle(title, $('article-body').value, state.article.metadata);
+            const body = C.serializeArticle(title, newBody, state.article.metadata);
             const changes = [];
-            if (!files().has(path) || await state.client.readText(path) !== body) changes.push({ path, text: body });
+            if (oldSource !== body) changes.push({ path, text: body });
             await publish(changes, next, (state.article.file ? 'Update ' : 'Create ') + path);
             fillArticle({ ...card, path: route, file: path, registered: true }, body);
         });

@@ -26,6 +26,46 @@ test('image Markdown uses encoded GitHub URL and site path; safe filenames', () 
     assert.equal(C.editablePath('docs/admin/admin.js'), false);
 });
 
+test('CMS creates dates to the minute and only advances updatedAt for a changed title or body', () => {
+    const old = { title: '标题', body: '# 正文\n' };
+    const dates = C.articleLifecycle(null, null, old.title, old.body, {}, '2026-11-26T12:34:59+08:00');
+    assert.deepEqual(dates, { createdAt: '2026-11-26T04:34Z', updatedAt: '2026-11-26T04:34Z' });
+    const later = '2026-11-27T13:26:22+08:00';
+    assert.deepEqual(C.articleLifecycle(dates, old, old.title, old.body, {}, later), dates);
+    assert.deepEqual(C.articleLifecycle(dates, { ...old, body: '# 正文\r\n' }, old.title, old.body, {}, later), dates);
+    const updated = { createdAt: dates.createdAt, updatedAt: '2026-11-27T05:26Z' };
+    assert.deepEqual(C.articleLifecycle(dates, old, '新标题', old.body, {}, later), updated);
+    assert.deepEqual(C.articleLifecycle(dates, old, old.title, '修改', {}, later), updated);
+    assert.deepEqual(C.articleLifecycle(updated, old, old.title, '修改', {}, '2026-01-01T00:00Z'), updated);
+    assert.deepEqual(C.articleLifecycle(null, old, old.title, old.body, dates, later), dates);
+});
+
+test('blank author removes the override, leaving the global default', () => {
+    const catalog = require('../docs/assets/catalog.json');
+    const route = catalog.articles[0].path;
+    const withAuthor = C.upsertArticle(catalog, route, { author: 'Guest' }, false);
+    const reset = C.upsertArticle(withAuthor, route, { author: '' }, false);
+    assert.equal(withAuthor.articles[0].author, 'Guest');
+    assert.equal(Object.hasOwn(reset.articles[0], 'author'), false);
+});
+
+test('CMS can recover existing uncatalogued file times from its GitHub history', async () => {
+    const path = 'docs/blogs/postgres/旧笔记.md';
+    const client = new C.GitHub('mock-token', async (url, options) => {
+        assert.equal(options.method, 'GET');
+        const query = new URL(url).searchParams;
+        assert.equal(query.get('path'), path);
+        assert.equal(query.get('sha'), 'snapshot');
+        return new Response(JSON.stringify([
+            { sha: 'd49aec4e04f35cab0826282dbc2eec79d2f38f45', commit: { author: { date: '2026-11-22T17:47:42Z' } } },
+            { sha: 'update', commit: { author: { date: '2025-12-01T02:03:24Z' } } },
+            { sha: 'create', commit: { author: { date: '2025-01-01T00:00:52Z' } } }
+        ]), { status: 200 });
+    });
+    client.snapshot = { head: 'snapshot' };
+    assert.deepEqual(await client.historyTimes(path), { createdAt: '2025-01-01T00:00Z', updatedAt: '2025-12-01T02:03Z' });
+});
+
 test('article, catalog and featured are updated atomically in one commit', async () => {
     const mock = new MockGit();
     const client = new C.GitHub('mock-token', mock.fetch);

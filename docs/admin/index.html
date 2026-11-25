@@ -81,12 +81,13 @@
                     <aside class="panel list-panel"><label class="sr-only" for="article-search">搜索文章</label><input id="article-search" class="search" type="search" placeholder="搜索标题或文件名…"><div id="article-list" class="tree-list"></div></aside>
                     <div id="article-empty" class="panel empty-panel"><div class="empty-icon">▤</div><h2>选择一篇文章</h2><p>从左侧目录开始，或者新建一篇文章。</p></div>
                     <form id="article-form" class="panel editor-panel" hidden>
-                        <div class="editor-head"><div><span class="eyebrow" id="article-mode">EDIT ARTICLE</span><h2 id="article-heading">编辑文章</h2><p id="article-path" class="file-path"></p></div><div class="actions"><button type="button" class="button danger" id="delete-article">删除</button><button class="button primary" type="submit">保存并发布</button></div></div>
+                        <div class="editor-head"><div><span class="eyebrow" id="article-mode">EDIT ARTICLE</span><h2 id="article-heading">编辑文章</h2><p id="article-path" class="file-path"></p><p id="article-dates" class="muted small-text"></p></div><div class="actions"><button type="button" class="button danger" id="delete-article">删除</button><button class="button primary" type="submit">保存并发布</button></div></div>
                         <div class="form-grid">
                             <label class="span-2">文章标题<input id="article-title" required placeholder="例如：PostgreSQL 查询计划"></label>
                             <label>所属专题<select id="article-directory" required></select></label>
                             <label>文件名<input id="article-filename" required placeholder="article-name.md"></label>
                             <label class="span-2">摘要<textarea id="article-description" rows="2" placeholder="文章卡片的简短介绍"></textarea></label>
+                            <label class="span-2">作者（留空使用默认作者）<input id="article-author" placeholder="Teletele"></label>
                         </div>
                         <details class="metadata"><summary>封面、标签与排序</summary><div class="form-grid">
                             <label>分类标签<input id="article-label"></label><label>封面文字<input id="article-cover"></label>

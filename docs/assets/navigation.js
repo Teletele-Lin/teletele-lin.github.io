@@ -57,6 +57,13 @@
         } catch (error) { return ''; }
     }
 
+    function timeLabel(value, label) {
+        var timezone = catalog.site.timezone;
+        var formatted = window.TeleteleCatalog.formatDateTime(value, timezone);
+        if (!formatted) return '';
+        return '<span class="time-label">' + escapeHTML(label) + ' <time datetime="' + escapeHTML(value) + '" title="' + escapeHTML(timezone) + '">' + escapeHTML(formatted) + '</time></span>';
+    }
+
     function card(node) {
         var isFolder = Boolean(node.children);
         var image = imageURL(node.coverImage);
@@ -69,6 +76,7 @@
             '<span class="cover-symbol">' + (isFolder ? folderIcon : articleIcon) + '</span>' +
             '</span><span class="card-body"><span class="card-title">' + escapeHTML(node.title) + '</span>' +
             '<span class="card-description">' + escapeHTML(node.description) + '</span>' +
+            (!isFolder && node.updatedAt ? '<span class="card-date">' + timeLabel(node.updatedAt, '更新于') + '</span>' : '') +
             '<span class="card-meta"><span>' + escapeHTML(meta) + '</span><span class="card-action">' + (isFolder ? '进入目录' : '阅读全文') + '</span></span></span></a>';
     }
 
@@ -158,7 +166,10 @@
             if (!node || node === root) return content;
             var prefix = breadcrumbs(node);
             if (!node.children) {
-                prefix += '<div class="article-toolbar"><span>' + escapeHTML(node.title) + '</span><a href="' + href(node.parent) + '">返回所属目录</a></div>\n\n';
+                prefix += '<div class="article-toolbar"><div class="article-heading-meta"><span class="article-bar-title">' + escapeHTML(node.title) + '</span>' +
+                    '<div class="article-meta"><span class="article-author">' + escapeHTML(node.author) + '</span>' +
+                    timeLabel(node.createdAt, '创建于') + timeLabel(node.updatedAt, '最近更新于') + '</div></div>' +
+                    '<a href="' + href(node.parent) + '">返回所属目录</a></div>\n\n';
                 content += '\n\n<footer class="article-footer"><a href="' + href(node.parent) + '">返回「' + escapeHTML(node.parent.title) + '」</a><a href="#/">浏览全部专题</a></footer>';
             }
             return prefix + content;
