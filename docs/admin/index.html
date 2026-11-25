@@ -3,57 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f8fafc">
     <meta name="robots" content="noindex, nofollow">
-    <title>内容管理 · Teletele's Blog</title>
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://api.github.com; img-src 'self' https: data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+    <title>内容管理 · Teletele Studio</title>
     <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-    <link id="theme-light" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0.9.0/dist/css/theme-simple.css">
-    <link id="theme-dark" rel="stylesheet" media="not all" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0.9.0/dist/css/theme-simple-dark.css">
-    <link rel="stylesheet" href="../assets/custom.css">
     <link rel="stylesheet" href="admin.css">
-    <script src="../assets/theme.js"></script>
+    <script src="../assets/catalog.js" data-validator-only defer></script>
+    <script src="vendor/markdown-it.min.js" defer></script>
+    <script src="core.js" defer></script>
+    <script src="admin.js" defer></script>
 </head>
 <body>
-    <header class="site-header"><div class="header-inner">
-        <a class="site-brand" href="../#/">Teletele<span>.</span></a>
-        <div class="header-actions"><a class="admin-home-link" href="../#/">返回博客</a><button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换到深色模式">深色模式</button></div>
-    </div></header>
-    <main class="admin-main">
-        <p class="home-eyebrow">TELETELE / CONTENT</p>
-        <h1>内容管理</h1>
-        <p class="admin-intro">在 Pages CMS 中编辑文章、上传图片，为专题和文章选择封面。保存后的内容会提交到博客的 GitHub 仓库。</p>
-        <a class="admin-primary" href="https://app.pagescms.org/Teletele-Lin/teletele-lin.github.io/main" target="_blank" rel="noopener noreferrer">打开 Pages CMS</a>
-        <section class="admin-setup" aria-labelledby="setup-title">
-            <h2 id="setup-title">第一次使用</h2>
-            <ol>
-                <li>先将本次配置提交并推送到博客仓库的 <strong>main</strong> 分支。</li>
-                <li>打开 Pages CMS，使用 GitHub 登录；安装其 GitHub App，选择授权 <strong>Teletele-Lin/teletele-lin.github.io</strong> 仓库。</li>
-                <li>进入该仓库的 <strong>main</strong> 分支，确认出现“文章正文”“卡片与封面”和“图片库”。</li>
-            </ol>
-        </section>
-        <div class="admin-grid">
-            <section class="admin-panel">
-                <span class="admin-label">媒体</span><h2>上传与复用图片</h2>
-                <p>进入“图片库”，上传图片后可在正文编辑器中插入，也可以在“卡片与封面”里选作封面。</p>
-                <p>支持 JPG、PNG、WebP、GIF、AVIF。已迁移的文章图片可在库内复用，正文也支持外部图片链接。</p>
-            </section>
-            <section class="admin-panel">
-                <span class="admin-label">写作</span><h2>编辑文章正文</h2>
-                <p>在“文章正文”中找到文章，可使用可视化编辑或 Source 源码模式。有代码块、表格或自定义 HTML 时，优先使用 Source 模式。</p>
-                <p>新建文章后，还需要在“卡片与封面”中添加对应卡片，才能显示在专题页。</p>
-            </section>
-            <section class="admin-panel">
-                <span class="admin-label">展示</span><h2>管理卡片与封面</h2>
-                <p>修改标题、摘要、关键词和显示顺序；在“封面图片”中上传或选择图片。留空会继续使用文字封面。</p>
-                <p>专题与子目录使用稳定的目录标识关联，例如 postgres、query、tools、ai。</p>
-            </section>
+    <header class="topbar">
+        <a class="brand" href="../#/" aria-label="返回博客">Teletele<span>.</span><small>STUDIO</small></a>
+        <div class="branch-badge"><span class="branch-icon">⑂</span> main <span class="branch-divider">/</span> GitHub</div>
+        <div class="top-actions">
+            <a class="quiet-link" href="../#/">查看博客 ↗</a>
+            <button class="button ghost" id="theme-toggle" type="button">深色模式</button>
+            <button class="button ghost" id="logout" type="button" hidden>退出连接</button>
         </div>
-        <section class="admin-notes">
-            <h2>保存与发布</h2>
-            <p>Pages CMS 直接修改 GitHub 仓库，保存后等待 GitHub Pages 发布完成，再刷新博客查看。现有文章的路径应保持稳定；如需重命名，记得同步修改卡片路径和推荐阅读。</p>
-            <p>图片库中的文件也可能被正文引用，删除前请检查引用情况。</p>
-            <a href="https://pagescms.org/docs/quick-start/" target="_blank" rel="noopener noreferrer">Pages CMS 官方使用说明</a>
+    </header>
+
+    <main id="login-view" class="login-layout">
+        <section class="login-intro">
+            <div class="eyebrow"><span class="status-dot"></span> PERSONAL CONTENT SYSTEM</div>
+            <h1>把灵感，<br>写进仓库<span>.</span></h1>
+            <p>你的博客，你的编辑方式。文章、专题、图片和发布统一管理，一切内容仍保存在 GitHub。</p>
+            <div class="login-features">
+                <div><span>01</span><strong>Markdown 写作</strong><small>实时预览 · 标题与卡片同步</small></div>
+                <div><span>02</span><strong>剪贴板图床</strong><small>直接粘贴 · 一键复制链接</small></div>
+                <div><span>03</span><strong>Git 原子提交</strong><small>无需数据库 · 自动发布</small></div>
+            </div>
+        </section>
+        <section class="login-card">
+            <div class="eyebrow">CONNECT REPOSITORY</div>
+            <h2>连接 GitHub</h2>
+            <p class="muted">Teletele-Lin / teletele-lin.github.io</p>
+            <form id="login-form">
+                <label for="token">Fine-grained Personal Access Token</label>
+                <input id="token" type="password" placeholder="github_pat_…" required autocomplete="off" spellcheck="false">
+                <button class="button primary wide" id="connect" type="submit">连接仓库 →</button>
+            </form>
+            <div class="help-box">
+                <strong>第一次连接？</strong>
+                <ol>
+                    <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">创建 Fine-grained Token ↗</a></li>
+                    <li>Repository access：仅选择本博客仓库。</li>
+                    <li>Repository permissions：Contents 设为 Read and write。</li>
+                </ol>
+                <p>Token 仅保存在当前页面内存中，不写入仓库或浏览器存储。刷新页面后需要重新连接。</p>
+            </div>
+            <p id="login-error" role="alert" class="error-text"></p>
         </section>
     </main>
+
+    <div id="workspace" class="workspace" hidden>
+        <aside class="sidebar">
+            <p class="sidebar-caption">工作空间</p>
+            <nav id="nav" aria-label="后台导航">
+                <button type="button" data-view="articles" class="nav-item active"><span>▤</span> 文章管理 <small id="article-count"></small></button>
+                <button type="button" data-view="media" class="nav-item"><span>▧</span> 图片库 <small id="media-count"></small></button>
+                <button type="button" data-view="topics" class="nav-item"><span>▦</span> 专题与封面</button>
+                <button type="button" data-view="home" class="nav-item"><span>⌂</span> 首页与推荐</button>
+            </nav>
+            <div class="repo-info">
+                <span class="status-dot"></span> 已连接 GitHub
+                <p>所有改动提交到 main。</p>
+                <a id="head-link" target="_blank" rel="noopener noreferrer" href="https://github.com/Teletele-Lin/teletele-lin.github.io/commits/main/">提交记录 ↗</a>
+                <button class="button secondary wide" id="refresh" type="button">↻ 同步远程仓库</button>
+            </div>
+        </aside>
+        <main class="content">
+            <section id="articles-view" class="view">
+                <div class="view-heading"><div><div class="eyebrow">CONTENT / ARTICLES</div><h1>文章管理</h1><p>正文、摘要、封面和目录一次保存。</p></div><button class="button primary" id="new-article">＋ 新建文章</button></div>
+                <div class="split-layout">
+                    <aside class="panel list-panel"><label class="sr-only" for="article-search">搜索文章</label><input id="article-search" class="search" type="search" placeholder="搜索标题或文件名…"><div id="article-list" class="tree-list"></div></aside>
+                    <div id="article-empty" class="panel empty-panel"><div class="empty-icon">▤</div><h2>选择一篇文章</h2><p>从左侧目录开始，或者新建一篇文章。</p></div>
+                    <form id="article-form" class="panel editor-panel" hidden>
+                        <div class="editor-head"><div><span class="eyebrow" id="article-mode">EDIT ARTICLE</span><h2 id="article-heading">编辑文章</h2><p id="article-path" class="file-path"></p></div><div class="actions"><button type="button" class="button danger" id="delete-article">删除</button><button class="button primary" type="submit">保存并发布</button></div></div>
+                        <div class="form-grid">
+                            <label class="span-2">文章标题<input id="article-title" required placeholder="例如：PostgreSQL 查询计划"></label>
+                            <label>所属专题<select id="article-directory" required></select></label>
+                            <label>文件名<input id="article-filename" required placeholder="article-name.md"></label>
+                            <label class="span-2">摘要<textarea id="article-description" rows="2" placeholder="文章卡片的简短介绍"></textarea></label>
+                        </div>
+                        <details class="metadata"><summary>封面、标签与排序</summary><div class="form-grid">
+                            <label>分类标签<input id="article-label"></label><label>封面文字<input id="article-cover"></label>
+                            <label class="span-2">封面图片 <div class="input-action"><input id="article-cover-image" placeholder="/assets/uploads/… 或 https://…"><button class="button secondary" type="button" id="pick-article-cover">从图片库选择</button></div></label>
+                            <label>关键词（逗号分隔）<input id="article-tags"></label><label>显示顺序<input id="article-order" type="number" step="1" value="10"></label>
+                            <label>内容状态<input id="article-status" placeholder="留空或待补充"></label><label class="check-label"><input id="article-featured" type="checkbox"> 加入首页推荐</label>
+                        </div></details>
+                        <div class="editor-toolbar"><div class="tabs"><button type="button" class="button small active" data-editor="split">分栏</button><button type="button" class="button small" data-editor="source">源码</button><button type="button" class="button small" data-editor="preview">预览</button></div><button class="button secondary small" type="button" id="insert-image">▧ 插入图片</button></div>
+                        <div id="article-editor" class="markdown-editor split"><textarea id="article-body" aria-label="Markdown 正文" placeholder="在这里写 Markdown；可直接粘贴截图…" spellcheck="false"></textarea><div id="article-preview" class="markdown-preview" aria-label="实时预览"></div></div>
+                        <p class="muted small-text">正文支持粘贴图片自动上传并插入 Markdown；保存时正文与卡片会一起提交。</p>
+                    </form>
+                </div>
+            </section>
+            <section id="media-view" class="view" hidden>
+                <div class="view-heading"><div><div class="eyebrow">ASSETS / MEDIA</div><h1>图片库</h1><p>截图之后，直接粘贴。GitHub 就是你的图床。</p></div><button class="button primary" id="media-choose" type="button">＋ 上传图片</button><input id="media-files" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" multiple hidden></div>
+                <div class="dropzone" id="dropzone" tabindex="0" role="region" aria-label="粘贴或拖拽图片"><span class="drop-icon">↥</span><div><h2>粘贴或拖入图片</h2><p>在本页面按 <kbd>Ctrl</kbd> + <kbd>V</kbd> / <kbd>⌘</kbd> + <kbd>V</kbd> 即可上传，支持 PNG、JPG、WebP、GIF、AVIF。</p></div><button type="button" class="button secondary" id="paste-image">从剪贴板读取</button></div>
+                <section id="upload-result" class="panel upload-result" hidden><div class="editor-head"><div><h2>上传成功</h2><p class="muted small-text">GitHub Markdown 链接，可直接粘贴到任意 Markdown 编辑器。</p></div><button class="button primary" id="copy-uploaded" type="button">复制全部 Markdown</button></div><textarea id="uploaded-markdown" class="plain-editor" rows="2" readonly aria-label="刚上传图片的 Markdown 链接"></textarea></section>
+                <div class="media-toolbar"><div><h2>全部图片 <span class="count-badge" id="media-total"></span></h2><span class="muted small-text">docs/assets/uploads/</span></div><input id="media-search" class="search" type="search" placeholder="搜索图片名称…" aria-label="搜索图片"></div>
+                <div id="media-grid" class="media-grid"></div>
+            </section>
+            <section id="topics-view" class="view" hidden>
+                <div class="view-heading"><div><div class="eyebrow">STRUCTURE / TOPICS</div><h1>专题与封面</h1><p>组织文章目录、编辑专题介绍与封面。</p></div><button class="button primary" id="new-topic" type="button">＋ 新建专题</button></div>
+                <div class="split-layout">
+                    <aside class="panel list-panel"><div id="topic-list" class="tree-list"></div></aside>
+                    <div id="topic-empty" class="panel empty-panel"><div class="empty-icon">▦</div><h2>选择一个专题</h2><p>从左侧选择，或者创建一个新专题。</p></div>
+                    <form id="topic-form" class="panel editor-panel" hidden>
+                        <div class="editor-head"><div><div class="eyebrow">EDIT TOPIC</div><h2 id="topic-heading">编辑专题</h2><p id="topic-path" class="file-path"></p></div><div class="actions"><button type="button" class="button danger" id="delete-topic">删除空专题</button><button class="button primary" type="submit">保存并发布</button></div></div>
+                        <div class="form-grid">
+                            <label>专题名称<input id="topic-title" required></label><label>专题标识<input id="topic-id" required pattern="[a-z][a-z0-9-]*" placeholder="new-topic"></label>
+                            <label>上级专题<select id="topic-parent"></select></label><label>显示顺序<input id="topic-order" type="number" step="1" value="10"></label>
+                            <label class="span-2">简介<textarea id="topic-description" rows="3"></textarea></label>
+                            <label>分类标签<input id="topic-label"></label><label>封面文字<input id="topic-cover"></label>
+                            <label class="span-2">封面图片<div class="input-action"><input id="topic-cover-image"><button class="button secondary" type="button" id="pick-topic-cover">从图片库选择</button></div></label>
+                            <label>配色<select id="topic-tone"><option value="">继承默认</option><option value="teal">蓝绿色</option><option value="blue">蓝色</option><option value="violet">紫色</option></select></label>
+                            <label class="span-2">专题概览 Markdown<textarea id="topic-body" class="plain-editor" rows="12" spellcheck="false"></textarea></label>
+                        </div>
+                        <p class="muted small-text">已有路径保持稳定；修改上级专题会改变目录的展示关系，不移动文件。新专题将自动创建 overview.md。</p>
+                    </form>
+                </div>
+            </section>
+            <section id="home-view" class="view" hidden>
+                <div class="view-heading"><div><div class="eyebrow">CONTENT / HOME</div><h1>首页与推荐</h1><p>管理首页文案和推荐阅读顺序。</p></div></div>
+                <form id="home-form" class="panel editor-panel">
+                    <div class="editor-head"><h2>首页内容</h2><button class="button primary" type="submit">保存并发布</button></div>
+                    <label class="sr-only" for="home-body">首页 Markdown</label><textarea id="home-body" class="plain-editor" rows="16" spellcheck="false"></textarea>
+                    <h2>推荐阅读</h2><p class="muted small-text">在文章管理中添加推荐，或调整以下展示顺序。</p><div id="featured-list"></div>
+                </form>
+            </section>
+        </main>
+    </div>
+    <div id="busy-indicator" class="busy-indicator" hidden><span class="spinner"></span><span id="busy-text">处理中…</span></div>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <dialog id="asset-dialog"><div class="dialog-head"><h2>选择图片</h2><button type="button" class="button ghost" id="close-asset-dialog">关闭 ✕</button></div><input type="search" id="asset-search" class="search" placeholder="搜索图片…" aria-label="搜索图片"><div id="asset-grid" class="asset-grid"></div></dialog>
+    <noscript>请启用 JavaScript 使用内容管理后台。</noscript>
 </body>
 </html>

@@ -79,11 +79,17 @@
         module.exports = { build: build };
         return;
     }
+    // The administration UI validates the live GitHub catalog without fetching
+    // the potentially older deployed copy from GitHub Pages.
+    if (document.currentScript && document.currentScript.hasAttribute('data-validator-only')) {
+        global.TeleteleCatalog = { build: build };
+        return;
+    }
     var ready = fetch('assets/catalog.json', { cache: 'no-cache' }).then(function (response) {
         if (!response.ok) throw new Error('目录加载失败：' + response.status);
         return response.json();
     }).then(build);
     // 正文渲染钩子负责显示加载失败信息，避免慢速脚本加载时提前产生未处理的拒绝。
     ready.catch(function () {});
-    global.TeleteleCatalog = { ready: ready };
+    global.TeleteleCatalog = { ready: ready, build: build };
 }(typeof window === 'undefined' ? globalThis : window));
