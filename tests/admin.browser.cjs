@@ -33,7 +33,7 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
     const mock = new MockGit();
     try {
         browser = await chromium.launch({ executablePath: process.env.CHROMIUM_EXECUTABLE || undefined, headless: true });
-        const context = await browser.newContext({ viewport: { width: 1460, height: 940 }, permissions: ['clipboard-read', 'clipboard-write'] });
+        const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, permissions: ['clipboard-read', 'clipboard-write'] });
         await context.route('https://api.github.com/**', async route => {
             const request = route.request();
             if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
@@ -45,6 +45,9 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         const page = await context.newPage();
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
+        page.on('console', message => {
+            if (message.type() === 'error' && /content security policy/i.test(message.text())) errors.push(message.text());
+        });
         page.on('dialog', dialog => dialog.accept());
         const url = 'http://127.0.0.1:' + server.address().port + '/admin/index.html';
         await page.goto(url);
@@ -63,19 +66,78 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         assert.match(await page.locator('#article-body').inputValue(), /GDB/);
         assert.match(await page.locator('#article-dates').textContent(), /创建于 \d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
         assert.equal(await page.locator('#article-author').getAttribute('placeholder'), 'Teletele');
+        const typography = await page.evaluate(() => {
+            const style = selector => getComputedStyle(document.querySelector(selector));
+            return {
+                body: style('body').fontFamily, preview: style('#article-preview').fontFamily,
+                input: style('#article-description').fontFamily, inputWeight: style('#article-description').fontWeight,
+                source: style('#article-editor .CodeMirror').fontFamily, code: style('#uploaded-markdown').fontFamily,
+                previewSize: style('#article-preview').fontSize
+            };
+        });
+        assert.equal(typography.body, typography.preview);
+        assert.equal(typography.body, typography.input);
+        assert.equal(typography.inputWeight, '400');
+        assert.equal(typography.source, typography.code);
+        assert.equal(typography.previewSize, '16px');
+        assert.ok(await page.locator('#workspace').evaluate(node => node.getBoundingClientRect().width >= 1900));
+        assert.equal(await page.locator('#article-metadata').evaluate(node => node.open), false);
+        async function fillEditor(type, value) {
+            await page.locator('#' + type + '-editor .CodeMirror').evaluate((node, text) => node.CodeMirror.setValue(text), value);
+        }
+        async function focusEditorEnd(type) {
+            await page.locator('#' + type + '-editor .CodeMirror').evaluate(node => {
+                const cm = node.CodeMirror;
+                cm.focus(); cm.setCursor(cm.posFromIndex(cm.getValue().length));
+            });
+        }
+        async function openMetadata() {
+            if (!(await page.locator('#article-metadata').evaluate(node => node.open))) await page.locator('#article-metadata summary').click();
+        }
+        await page.locator('#toggle-article-list').click();
+        assert.equal(await page.locator('#article-layout').evaluate(node => node.classList.contains('list-collapsed')), true);
+        await page.locator('#toggle-article-list').click();
 
         await page.clock.setFixedTime(new Date('2026-11-26T01:20:59Z'));
         await page.locator('#new-article').click();
         await page.locator('#article-title').fill('测试新文章');
         await page.locator('#article-description').fill('测试摘要');
-        await page.locator('#article-body').fill('# 测试标题\n\n**正文**\n\n<script>window.evil=1</script>');
+        await fillEditor('article', '# 测试标题\n\n**正文**\n\n<script>window.evil=1</script>');
         await page.locator('#article-preview strong').waitFor();
         assert.equal(await page.evaluate(() => window.evil), undefined);
         assert.equal(await page.locator('#article-preview script').count(), 0);
-        await page.locator('#article-form details summary').click();
+        await openMetadata();
         await page.locator('#article-featured').check();
-        await page.locator('#article-form button[type=submit]').click();
+        // The Markdown workspace can cover the full viewport, switch modes,
+        // and publish without leaving fullscreen.
+        await page.locator('[data-open-editor=article]').click();
+        assert.equal(await page.locator('#article-writing').evaluate(node => node.classList.contains('is-fullscreen')), true);
+        const dimensions = await page.locator('#article-writing').boundingBox();
+        assert.ok(dimensions.width >= 1910 && dimensions.height >= 1070);
+        await page.locator('#article-writing [data-editor=preview]').click();
+        assert.equal(await page.locator('#article-editor .studio-source').isVisible(), false);
+        assert.equal(await page.locator('#article-preview').isVisible(), true);
+        await page.locator('#article-writing [data-editor=source]').click();
+        assert.equal(await page.locator('#article-preview').isVisible(), false);
+        await page.locator('#article-writing [data-editor=split]').click();
+        assert.equal(await page.locator('#article-preview').isVisible(), true);
+        // Test editing commands on a selected text range (and undo preserves the source).
+        const beforeFormat = await page.locator('#article-body').inputValue();
+        await page.locator('#article-editor .CodeMirror').evaluate(node => node.CodeMirror.setSelection({line: 0, ch: 2}, {line: 0, ch: 6}));
+        await page.locator('#article-writing [data-format=toggleItalic]').click();
+        assert.notEqual(await page.locator('#article-body').inputValue(), beforeFormat);
+        await page.locator('#article-writing [data-format=undo]').click();
+        assert.equal(await page.locator('#article-body').inputValue(), beforeFormat);
+        await focusEditorEnd('article');
+        await page.keyboard.insertText(' keyboard test');
+        assert.match(await page.locator('#article-body').inputValue(), / keyboard test$/);
+        await page.locator('#article-writing [data-format=undo]').click();
+        assert.equal(await page.locator('#article-body').inputValue(), beforeFormat);
+        await page.locator('#article-writing .studio-save').click();
         await page.locator('#busy-indicator').waitFor({ state: 'hidden' });
+        assert.equal(await page.locator('#article-writing').evaluate(node => node.classList.contains('is-fullscreen')), true);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#article-writing').evaluate(node => node.classList.contains('is-fullscreen')), false);
         const article = 'docs/blogs/postgres/测试新文章.md';
         assert.ok(mock.currentTree().has(article));
         assert.match(mock.text(article), /title: "测试新文章"/);
@@ -89,7 +151,8 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         await page.clock.setFixedTime(new Date('2026-11-26T01:23:51Z'));
         await page.locator('#article-author').fill('Guest');
         await page.locator('#article-description').fill('修改卡片摘要');
-        await page.locator('#article-form button[type=submit]').click();
+        await page.locator('#article-author').focus();
+        await page.keyboard.press('Control+s');
         await page.locator('#busy-indicator').waitFor({ state: 'hidden' });
         assert.equal(getArticle().author, 'Guest');
         assert.equal(getArticle().updatedAt, '2026-11-26T01:20Z');
@@ -123,15 +186,15 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         await page.locator('[data-view=articles]').click();
         await page.locator('#article-list button').filter({ hasText: '测试新文章' }).click();
         await page.locator('#article-form').waitFor({ state: 'visible' });
-        await page.locator('#article-body').focus();
         await page.clock.setFixedTime(new Date('2026-11-26T01:24:27Z'));
-        await page.locator('#article-body').evaluate(node => { node.setSelectionRange(node.value.length, node.value.length); });
-        await paste('#article-body');
+        await focusEditorEnd('article');
+        await page.keyboard.press('Control+Shift+f');
+        assert.equal(await page.locator('#article-writing').evaluate(node => node.classList.contains('is-fullscreen')), true);
+        await paste('#article-editor .CodeMirror textarea');
         const inserted = await page.locator('#article-body').inputValue();
         assert.match(inserted, /!\[.+\.png\]\(https:\/\/raw\.githubusercontent\.com\//);
-        await page.locator('#article-form details summary').click();
-        // Ensure details is open (the browser preserves its previous state).
-        if (!(await page.locator('#article-form details').evaluate(d => d.open))) await page.locator('#article-form details summary').click();
+        await page.keyboard.press('Escape');
+        await openMetadata();
         await page.locator('#pick-article-cover').click();
         await page.locator('#asset-dialog .asset-choice').first().click();
         assert.match(await page.locator('#article-cover-image').inputValue(), /^\/assets\/uploads\//);
@@ -147,14 +210,19 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         await page.locator('#topic-title').fill('新专题');
         await page.locator('#topic-id').fill('new-topic');
         await page.locator('#topic-description').fill('简介');
+        await fillEditor('topic', '# 新专题\n\n');
+        await focusEditorEnd('topic');
+        await paste('#topic-editor .CodeMirror textarea');
+        assert.match(await page.locator('#topic-body').inputValue(), /raw\.githubusercontent\.com/);
         await page.locator('#topic-form button[type=submit]').click();
         await page.locator('#busy-indicator').waitFor({ state: 'hidden' });
         assert.match(mock.text('docs/blogs/new-topic/overview.md'), /data-catalog="new-topic"/);
         assert.ok(JSON.parse(mock.text(catalogPath)).directories.some(d => d.id === 'new-topic'));
+        assert.equal(await page.locator('#topic-editor .CodeMirror').isVisible(), true);
 
         await page.locator('[data-view=home]').click();
         await page.locator('#home-form').waitFor({ state: 'visible' });
-        await page.locator('#home-body').fill((await page.locator('#home-body').inputValue()) + '\nCMS test\n');
+        await fillEditor('home', (await page.locator('#home-body').inputValue()) + '\nCMS test\n');
         await page.locator('#home-form button[type=submit]').click();
         await page.locator('#busy-indicator').waitFor({ state: 'hidden' });
         assert.match(mock.text('docs/README.md'), /CMS test/);
@@ -168,6 +236,13 @@ test('self-hosted admin: articles, publishing, clipboard images, topics and conf
         await page.locator('#notice').filter({ hasText: '已有新提交' }).waitFor();
         assert.equal(mock.head, external);
         assert.equal(await page.locator('#article-title').inputValue(), '未发布的新标题');
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.locator('[data-open-editor=article]').click();
+        const mobile = await page.locator('#article-writing').boundingBox();
+        assert.ok(mobile.width >= 389 && mobile.width <= 391 && mobile.height >= 843);
+        await page.locator('#article-writing [data-editor=source]').click();
+        assert.equal(await page.locator('#article-editor .CodeMirror').isVisible(), true);
+        await page.locator('#article-fullscreen').click();
         assert.deepEqual(errors, []);
         await context.close();
     } finally {

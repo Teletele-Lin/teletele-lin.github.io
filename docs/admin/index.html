@@ -8,10 +8,14 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://api.github.com; img-src 'self' https: data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
     <title>内容管理 · Teletele Studio</title>
     <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="vendor/easymde.min.css">
+    <link rel="stylesheet" href="../assets/typography.css">
     <link rel="stylesheet" href="admin.css">
     <script src="../assets/catalog.js" data-validator-only defer></script>
     <script src="vendor/markdown-it.min.js" defer></script>
+    <script src="vendor/easymde.min.js" defer></script>
     <script src="core.js" defer></script>
+    <script src="editor.js" defer></script>
     <script src="admin.js" defer></script>
 </head>
 <body>
@@ -76,28 +80,24 @@
         </aside>
         <main class="content">
             <section id="articles-view" class="view">
-                <div class="view-heading"><div><div class="eyebrow">CONTENT / ARTICLES</div><h1>文章管理</h1><p>正文、摘要、封面和目录一次保存。</p></div><button class="button primary" id="new-article">＋ 新建文章</button></div>
-                <div class="split-layout">
+                <div class="view-heading"><div><div class="eyebrow">CONTENT / ARTICLES</div><h1>文章管理</h1><p>正文、摘要、封面和目录一次保存。</p></div><div class="actions"><button class="button secondary" id="toggle-article-list" type="button" aria-pressed="false">折叠目录</button><button class="button primary" id="new-article">＋ 新建文章</button></div></div>
+                <div class="split-layout" id="article-layout">
                     <aside class="panel list-panel"><label class="sr-only" for="article-search">搜索文章</label><input id="article-search" class="search" type="search" placeholder="搜索标题或文件名…"><div id="article-list" class="tree-list"></div></aside>
                     <div id="article-empty" class="panel empty-panel"><div class="empty-icon">▤</div><h2>选择一篇文章</h2><p>从左侧目录开始，或者新建一篇文章。</p></div>
                     <form id="article-form" class="panel editor-panel" hidden>
-                        <div class="editor-head"><div><span class="eyebrow" id="article-mode">EDIT ARTICLE</span><h2 id="article-heading">编辑文章</h2><p id="article-path" class="file-path"></p><p id="article-dates" class="muted small-text"></p></div><div class="actions"><button type="button" class="button danger" id="delete-article">删除</button><button class="button primary" type="submit">保存并发布</button></div></div>
-                        <div class="form-grid">
-                            <label class="span-2">文章标题<input id="article-title" required placeholder="例如：PostgreSQL 查询计划"></label>
+                        <div class="editor-head"><div><span class="eyebrow" id="article-mode">EDIT ARTICLE</span><h2 id="article-heading">编辑文章</h2><p id="article-path" class="file-path"></p><p id="article-dates" class="muted small-text"></p></div><div class="actions"><button type="button" class="button secondary" data-open-editor="article">⛶ 全屏写作</button><button type="button" class="button danger" id="delete-article">删除</button><button class="button primary" type="submit">保存并发布</button></div></div>
+                        <label class="article-basic-title">文章标题<input id="article-title" required placeholder="例如：PostgreSQL 查询计划"></label>
+                        <details class="metadata" id="article-metadata"><summary>文章属性、封面、标签与排序</summary><div class="form-grid">
                             <label>所属专题<select id="article-directory" required></select></label>
                             <label>文件名<input id="article-filename" required placeholder="article-name.md"></label>
                             <label class="span-2">摘要<textarea id="article-description" rows="2" placeholder="文章卡片的简短介绍"></textarea></label>
                             <label class="span-2">作者（留空使用默认作者）<input id="article-author" placeholder="Teletele"></label>
-                        </div>
-                        <details class="metadata"><summary>封面、标签与排序</summary><div class="form-grid">
                             <label>分类标签<input id="article-label"></label><label>封面文字<input id="article-cover"></label>
                             <label class="span-2">封面图片 <div class="input-action"><input id="article-cover-image" placeholder="/assets/uploads/… 或 https://…"><button class="button secondary" type="button" id="pick-article-cover">从图片库选择</button></div></label>
                             <label>关键词（逗号分隔）<input id="article-tags"></label><label>显示顺序<input id="article-order" type="number" step="1" value="10"></label>
                             <label>内容状态<input id="article-status" placeholder="留空或待补充"></label><label class="check-label"><input id="article-featured" type="checkbox"> 加入首页推荐</label>
                         </div></details>
-                        <div class="editor-toolbar"><div class="tabs"><button type="button" class="button small active" data-editor="split">分栏</button><button type="button" class="button small" data-editor="source">源码</button><button type="button" class="button small" data-editor="preview">预览</button></div><button class="button secondary small" type="button" id="insert-image">▧ 插入图片</button></div>
-                        <div id="article-editor" class="markdown-editor split"><textarea id="article-body" aria-label="Markdown 正文" placeholder="在这里写 Markdown；可直接粘贴截图…" spellcheck="false"></textarea><div id="article-preview" class="markdown-preview" aria-label="实时预览"></div></div>
-                        <p class="muted small-text">正文支持粘贴图片自动上传并插入 Markdown；保存时正文与卡片会一起提交。</p>
+                        <textarea id="article-body" aria-label="Markdown 正文" placeholder="在这里写 Markdown；可直接粘贴截图…" spellcheck="false"></textarea>
                     </form>
                 </div>
             </section>
@@ -114,7 +114,7 @@
                     <aside class="panel list-panel"><div id="topic-list" class="tree-list"></div></aside>
                     <div id="topic-empty" class="panel empty-panel"><div class="empty-icon">▦</div><h2>选择一个专题</h2><p>从左侧选择，或者创建一个新专题。</p></div>
                     <form id="topic-form" class="panel editor-panel" hidden>
-                        <div class="editor-head"><div><div class="eyebrow">EDIT TOPIC</div><h2 id="topic-heading">编辑专题</h2><p id="topic-path" class="file-path"></p></div><div class="actions"><button type="button" class="button danger" id="delete-topic">删除空专题</button><button class="button primary" type="submit">保存并发布</button></div></div>
+                        <div class="editor-head"><div><div class="eyebrow">EDIT TOPIC</div><h2 id="topic-heading">编辑专题</h2><p id="topic-path" class="file-path"></p></div><div class="actions"><button type="button" class="button secondary" data-open-editor="topic">⛶ 全屏写作</button><button type="button" class="button danger" id="delete-topic">删除空专题</button><button class="button primary" type="submit">保存并发布</button></div></div>
                         <div class="form-grid">
                             <label>专题名称<input id="topic-title" required></label><label>专题标识<input id="topic-id" required pattern="[a-z][a-z0-9-]*" placeholder="new-topic"></label>
                             <label>上级专题<select id="topic-parent"></select></label><label>显示顺序<input id="topic-order" type="number" step="1" value="10"></label>
@@ -122,8 +122,8 @@
                             <label>分类标签<input id="topic-label"></label><label>封面文字<input id="topic-cover"></label>
                             <label class="span-2">封面图片<div class="input-action"><input id="topic-cover-image"><button class="button secondary" type="button" id="pick-topic-cover">从图片库选择</button></div></label>
                             <label>配色<select id="topic-tone"><option value="">继承默认</option><option value="teal">蓝绿色</option><option value="blue">蓝色</option><option value="violet">紫色</option></select></label>
-                            <label class="span-2">专题概览 Markdown<textarea id="topic-body" class="plain-editor" rows="12" spellcheck="false"></textarea></label>
                         </div>
+                        <label for="topic-body">专题概览 Markdown</label><textarea id="topic-body" aria-label="专题概览 Markdown" class="plain-editor" rows="12" spellcheck="false"></textarea>
                         <p class="muted small-text">已有路径保持稳定；修改上级专题会改变目录的展示关系，不移动文件。新专题将自动创建 overview.md。</p>
                     </form>
                 </div>
@@ -131,7 +131,7 @@
             <section id="home-view" class="view" hidden>
                 <div class="view-heading"><div><div class="eyebrow">CONTENT / HOME</div><h1>首页与推荐</h1><p>管理首页文案和推荐阅读顺序。</p></div></div>
                 <form id="home-form" class="panel editor-panel">
-                    <div class="editor-head"><h2>首页内容</h2><button class="button primary" type="submit">保存并发布</button></div>
+                    <div class="editor-head"><h2>首页内容</h2><div class="actions"><button class="button secondary" type="button" data-open-editor="home">⛶ 全屏写作</button><button class="button primary" type="submit">保存并发布</button></div></div>
                     <label class="sr-only" for="home-body">首页 Markdown</label><textarea id="home-body" class="plain-editor" rows="16" spellcheck="false"></textarea>
                     <h2>推荐阅读</h2><p class="muted small-text">在文章管理中添加推荐，或调整以下展示顺序。</p><div id="featured-list"></div>
                 </form>

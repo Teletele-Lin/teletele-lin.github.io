@@ -2,7 +2,8 @@
     'use strict';
     const C = window.CMSCore;
     const $ = id => document.getElementById(id);
-    const state = { client: null, catalog: null, view: 'articles', article: null, topic: null, featured: [], dirty: false, busy: false, picker: null, filenameEdited: false, previewTimer: null, previews: new Map() };
+    const state = { client: null, catalog: null, view: 'articles', article: null, topic: null, featured: [], dirty: false, busy: false, picker: null, filenameEdited: false, previews: new Map() };
+    const editors = new Map();
     const md = window.markdownit({ html: false, linkify: true, breaks: false });
     const base = 'https://github.com/' + C.OWNER + '/' + C.REPO;
     const val = id => $(id).value.trim();
@@ -68,15 +69,35 @@
         $('head-link').textContent = '提交 ' + state.client.snapshot.head.slice(0, 7) + ' ↗';
         $('head-link').href = base + '/commit/' + state.client.snapshot.head;
     }
+    function getEditor(type) {
+        if (!editors.has(type)) {
+            editors.set(type, new window.StudioEditor($(type + '-body'), {
+                busy: () => state.busy,
+                onChange: () => dirty(),
+                previewHTML: value => md.render(value),
+                renderPreview: (value, pane) => renderMarkdown(type, value, pane),
+                onUpload: (images, editor, range) => void uploadImages(images, { editor, range }),
+                onPick: (editor, range) => openPicker(path => {
+                    editor.insertAt(C.markdownImage(path), range);
+                    editor.focus();
+                })
+            }));
+        }
+        return editors.get(type);
+    }
+    function bodyValue(type) { return getEditor(type).value; }
+    for (const button of document.querySelectorAll('[data-open-editor]')) {
+        button.addEventListener('click', () => getEditor(button.dataset.openEditor).setFullscreen(true, true));
+    }
     function clearArticle() {
         state.article = null; $('article-form').hidden = true; $('article-empty').hidden = false;
-        $('article-form').reset(); $('article-preview').replaceChildren();
+        $('article-form').reset(); editors.get('article')?.reset();
     }
     function clearTopic() {
-        state.topic = null; $('topic-form').hidden = true; $('topic-empty').hidden = false; $('topic-form').reset();
+        state.topic = null; $('topic-form').hidden = true; $('topic-empty').hidden = false; $('topic-form').reset(); editors.get('topic')?.reset();
     }
     function resetViews() {
-        clearArticle(); clearTopic(); $('home-form').reset(); $('featured-list').replaceChildren(); state.featured = [];
+        clearArticle(); clearTopic(); $('home-form').reset(); editors.get('home')?.reset(); $('featured-list').replaceChildren(); state.featured = [];
         dirty(false);
     }
     function clearImagePreviews() {
@@ -84,12 +105,15 @@
         state.previews.clear(); $('upload-result').hidden = true; $('uploaded-markdown').value = '';
     }
     function showView(view) {
+        for (const editor of editors.values()) editor.setFullscreen(false);
         state.view = view;
         for (const name of ['articles', 'media', 'topics', 'home']) $(name + '-view').hidden = name !== view;
         for (const b of $('nav').querySelectorAll('button[data-view]')) b.classList.toggle('active', b.dataset.view === view);
         if (view === 'articles') renderArticles();
         if (view === 'topics') renderTopics();
         if (view === 'media') renderMedia();
+        const type = { articles: 'article', topics: 'topic', home: 'home' }[view];
+        if (type) editors.get(type)?.refresh();
     }
     $('login-form').addEventListener('submit', async event => {
         event.preventDefault();
@@ -175,7 +199,7 @@
         if (!items.length) list.append(el('p', 'no-results', '没有匹配的文章。'));
     }
     $('article-search').addEventListener('input', renderArticles);
-    function fillArticle(item, source = '') {
+    function fillArticle(item, source = '', preserveEditor = false) {
         const article = C.extractArticle(source);
         state.article = { file: item.file || null, metadata: article.metadata, registered: item.registered || false };
         const site = window.TeleteleCatalog.siteSettings(state.catalog.site);
@@ -199,8 +223,10 @@
             : item.file ? '保存时自动补录历史时间' : '首次保存时自动记录时间';
         $('article-dates').title = site.timezone;
         $('article-featured').checked = state.catalog.featured.includes(item.path);
-        set('article-body', article.body);
-        updateArticlePath(); renderPreview(); dirty(false); renderArticles();
+        if (!preserveEditor) $('article-metadata').open = !item.file || !item.registered;
+        updateArticlePath();
+        const editor = getEditor('article'); editor.setTitle(val('article-title') || '新建文章'); editor.setValue(article.body, preserveEditor);
+        dirty(false); renderArticles();
     }
     function openArticle(item) {
         if (state.article?.file === item.file && !$('article-form').hidden) return;
@@ -229,19 +255,32 @@
     }
     $('article-title').addEventListener('input', () => {
         if (!state.filenameEdited && !state.article?.file) set('article-filename', C.suggestedFilename(val('article-title')));
+        editors.get('article')?.setTitle(val('article-title') || '新建文章');
         updateArticlePath();
     });
     $('article-filename').addEventListener('input', () => { state.filenameEdited = true; updateArticlePath(); });
     $('article-directory').addEventListener('change', updateArticlePath);
     $('article-form').addEventListener('input', () => dirty());
     $('article-form').addEventListener('change', () => dirty());
-    function renderPreview() {
+    $('article-form').addEventListener('invalid', event => {
+        if ($('article-metadata').contains(event.target)) $('article-metadata').open = true;
+    }, true);
+    $('toggle-article-list').addEventListener('click', () => {
+        const collapsed = $('article-layout').classList.toggle('list-collapsed');
+        $('toggle-article-list').textContent = collapsed ? '展开目录' : '折叠目录';
+        $('toggle-article-list').setAttribute('aria-pressed', String(collapsed));
+        editors.get('article')?.refresh();
+    });
+    function renderMarkdown(type, value, preview) {
         // HTML is intentionally disabled; uploaded Markdown cannot run scripts or
         // present interactive HTML in a page that holds a GitHub token.
-        const preview = $('article-preview');
-        preview.innerHTML = md.render($('article-body').value);
+        const top = preview.scrollTop;
+        preview.innerHTML = md.render(value);
         let dir;
-        try { dir = articleTarget().replace(/\/[^/]+$/, '/'); } catch { dir = 'docs/'; }
+        try {
+            const target = type === 'article' ? articleTarget() : type === 'topic' ? topicTarget() : 'docs/README.md';
+            dir = target.replace(/\/[^/]+$/, '/');
+        } catch { dir = 'docs/'; }
         for (const image of preview.querySelectorAll('img')) {
             const source = image.getAttribute('src');
             if (source) {
@@ -254,14 +293,8 @@
                 if (repoPath.startsWith('docs/')) image.src = C.rawUrl(repoPath, state.client?.snapshot.head || C.BRANCH);
             } catch {}
         }
+        preview.scrollTop = top;
     }
-    $('article-body').addEventListener('input', () => { clearTimeout(state.previewTimer); state.previewTimer = setTimeout(renderPreview, 140); });
-    $('article-preview').addEventListener('click', event => { if (event.target.closest('a')) event.preventDefault(); });
-    for (const b of document.querySelectorAll('[data-editor]')) b.addEventListener('click', () => {
-        $('article-editor').className = 'markdown-editor ' + b.dataset.editor;
-        document.querySelectorAll('[data-editor]').forEach(item => item.classList.toggle('active', item === b));
-        if (b.dataset.editor !== 'source') renderPreview();
-    });
     function validCover(value) {
         if (value && !/^\/(?!\/)|^https?:\/\//i.test(value)) throw new Error('封面图片请使用站内根路径或 https:// 图片链接。');
         return value;
@@ -289,7 +322,7 @@
             const oldSource = files().has(path) ? await state.client.readText(path) : null;
             const old = oldSource === null ? null : C.extractArticle(oldSource);
             if (old) old.title = previous?.title || old.title || C.basename(path).replace(/\.md$/, '');
-            const newBody = $('article-body').value;
+            const newBody = bodyValue('article');
             const historical = old && (!previous?.createdAt || !previous?.updatedAt) ? await state.client.historyTimes(path) : {};
             const card = {
                 title, directory: val('article-directory'), description: val('article-description'),
@@ -303,7 +336,7 @@
             const changes = [];
             if (oldSource !== body) changes.push({ path, text: body });
             await publish(changes, next, (state.article.file ? 'Update ' : 'Create ') + path);
-            fillArticle({ ...card, path: route, file: path, registered: true }, body);
+            fillArticle({ ...card, path: route, file: path, registered: true }, body, true);
         });
     });
     $('delete-article').addEventListener('click', () => {
@@ -328,13 +361,14 @@
         }
         list.append(...sorted(state.catalog.directories.filter(d => !d.parent)).map(branch));
     }
-    function fillTopic(item, source = '') {
+    function fillTopic(item, source = '', preserveEditor = false) {
         state.topic = { id: item.id || null, path: item.path || null };
         $('topic-empty').hidden = true; $('topic-form').hidden = false;
         $('topic-heading').textContent = item.id ? '编辑专题' : '新建专题'; $('delete-topic').hidden = !item.id;
         $('topic-id').readOnly = !!item.id;
-        for (const [key, value] of Object.entries({ title: item.title, id: item.id, order: item.order ?? 10, description: item.description, label: item.label, cover: item.cover, 'cover-image': item.coverImage, tone: item.tone, body: source })) set('topic-' + key, value);
+        for (const [key, value] of Object.entries({ title: item.title, id: item.id, order: item.order ?? 10, description: item.description, label: item.label, cover: item.cover, 'cover-image': item.coverImage, tone: item.tone })) set('topic-' + key, value);
         topicOptions($('topic-parent'), item.parent || '', true, item.id || '');
+        const editor = getEditor('topic'); editor.setTitle(val('topic-title') || '新建专题'); editor.setValue(source, preserveEditor);
         updateTopicPath(); dirty(false); renderTopics();
     }
     function topicTarget() {
@@ -360,6 +394,7 @@
         $('topic-title').focus();
     });
     $('topic-id').addEventListener('input', updateTopicPath);
+    $('topic-title').addEventListener('input', () => editors.get('topic')?.setTitle(val('topic-title') || '新建专题'));
     $('topic-parent').addEventListener('change', updateTopicPath);
     $('topic-form').addEventListener('input', () => dirty());
     $('topic-form').addEventListener('change', () => dirty());
@@ -372,12 +407,12 @@
             if (index < 0 && (next.directories.some(d => d.id === id) || files().has(path))) throw new Error('专题标识或目录已存在。');
             const item = { ...(index >= 0 ? next.directories[index] : {}), id, title, path: route, parent: val('topic-parent'), description: val('topic-description'), label: val('topic-label'), cover: val('topic-cover'), coverImage: validCover(val('topic-cover-image')), tone: val('topic-tone'), order: number('topic-order') };
             if (index < 0) next.directories.push(item); else next.directories[index] = item;
-            let body = $('topic-body').value || '# ' + title + '\n\n' + item.description + '\n';
+            let body = bodyValue('topic') || '# ' + title + '\n\n' + item.description + '\n';
             if (!new RegExp('data-catalog=["\']' + id + '["\']').test(body)) body = body.trimEnd() + '\n\n<div data-catalog="' + id + '"></div>\n';
             const changes = [];
             if (!files().has(path) || await state.client.readText(path) !== body) changes.push({ path, text: body });
             await publish(changes, next, (index < 0 ? 'Create topic ' : 'Update topic ') + id);
-            fillTopic(item, body);
+            fillTopic(item, body, true);
         });
     });
     $('delete-topic').addEventListener('click', () => {
@@ -397,7 +432,7 @@
     });
 
     async function fillHome() {
-        set('home-body', await state.client.readText('docs/README.md'));
+        const editor = getEditor('home'); editor.setTitle('首页内容'); editor.setValue(await state.client.readText('docs/README.md'));
         state.featured = [...state.catalog.featured]; renderFeatured();
     }
     function renderFeatured() {
@@ -415,12 +450,11 @@
         [state.featured[index], state.featured[index + direction]] = [state.featured[index + direction], state.featured[index]];
         renderFeatured(); dirty();
     }
-    $('home-body').addEventListener('input', () => dirty());
     $('home-form').addEventListener('submit', event => {
         event.preventDefault();
         void run('保存首页…', async () => {
             const next = clone(state.catalog); next.featured = [...state.featured];
-            const body = $('home-body').value, changes = [];
+            const body = bodyValue('home'), changes = [];
             if (!/data-catalog=["']root["']/.test(body) || !/data-featured(?:[\s=>])/.test(body)) throw new Error('请保留首页的 data-catalog="root" 与 data-featured 占位符。');
             if (body !== await state.client.readText('docs/README.md')) changes.push({ path: 'docs/README.md', text: body });
             await publish(changes, next, 'Update homepage'); dirty(false);
@@ -466,7 +500,7 @@
         if (!files.length) for (const item of data?.items || []) if (item.kind === 'file') { const f = item.getAsFile(); if (f) files.push(f); }
         return files.filter(file => file.type.startsWith('image/'));
     }
-    async function uploadImages(input, insertAt = null) {
+    async function uploadImages(input, target = null) {
         if (!input.length) return;
         await run('正在上传图片到 GitHub…', async () => {
             const changes = [];
@@ -477,10 +511,9 @@
             }
             await publish(changes, null, 'Upload ' + changes.length + ' image(s)');
             for (let i = 0; i < changes.length; i++) state.previews.set(changes[i].path, URL.createObjectURL(input[i]));
-            if (insertAt) {
-                const textarea = $('article-body');
-                textarea.setRangeText(changes.map(change => C.markdownImage(change.path)).join('\n'), insertAt.start, insertAt.end, 'end');
-                dirty(); renderPreview();
+            if (target) {
+                target.editor.insertAt(changes.map(change => C.markdownImage(change.path)).join('\n'), target.range);
+                dirty();
             } else {
                 // The media library includes a copy button on each newly uploaded card.
                 $('uploaded-markdown').value = changes.map(change => C.markdownImage(change.path)).join('\n');
@@ -488,14 +521,12 @@
                 $('media-search').value = ''; renderMedia();
             }
         });
-        if (insertAt) $('article-body').focus();
+        if (target) target.editor.focus();
     }
     document.addEventListener('paste', event => {
         if (!state.client || state.busy || event.defaultPrevented || $('asset-dialog').open) return;
         const images = clipboardFiles(event); if (!images.length) return;
-        if (state.view === 'articles' && event.target === $('article-body') && !$('article-form').hidden) {
-            event.preventDefault(); void uploadImages(images, { start: event.target.selectionStart, end: event.target.selectionEnd });
-        } else if (state.view === 'media' && !(event.target instanceof Element && event.target.closest('input,textarea,[contenteditable=true]'))) {
+        if (state.view === 'media' && !(event.target instanceof Element && event.target.closest('input,textarea,[contenteditable=true]'))) {
             event.preventDefault(); void uploadImages(images);
         }
     });
@@ -547,10 +578,4 @@
     $('close-asset-dialog').addEventListener('click', () => $('asset-dialog').close());
     $('asset-dialog').addEventListener('close', () => { state.picker = null; });
     for (const type of ['article', 'topic']) $('pick-' + type + '-cover').addEventListener('click', () => openPicker(path => { set(type + '-cover-image', '/' + C.encodePath(path.slice(5))); dirty(); }));
-    $('insert-image').addEventListener('click', () => {
-        const textarea = $('article-body'); const start = textarea.selectionStart, end = textarea.selectionEnd;
-        openPicker(path => {
-            textarea.setRangeText(C.markdownImage(path), start, end, 'end'); dirty(); renderPreview(); textarea.focus();
-        });
-    });
 })();

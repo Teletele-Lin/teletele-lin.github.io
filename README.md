@@ -29,14 +29,15 @@ python3 -m http.server 3000 --directory docs
 3. Repository permissions 中将 **Contents** 设置为 **Read and write**。不要额外授予 Workflows 等无关权限。
 4. 在后台粘贴 Token，点击「连接仓库」。页面会使用 GitHub API 读取 main 分支的目录与正文。
 
-Token 只保留在当前页面内存中，刷新或退出连接后需重新输入。不会保存至仓库、本地存储或发送给其他服务。后台的 Markdown 渲染库 [markdown-it 15.0.3](https://github.com/markdown-it/markdown-it) 为本地固定版本，预览禁用原始 HTML，避免文章中的 HTML 在持有 Token 的后台执行；HTML 原文在保存时保持不变，博客前台仍由 Docsify 渲染。
+Token 只保留在当前页面内存中，刷新或退出连接后需重新输入。不会保存至仓库、本地存储或发送给其他服务。后台的 [EasyMDE 2.21.0](https://github.com/Ionaru/easy-markdown-editor) 编辑器和 [markdown-it 15.0.3](https://github.com/markdown-it/markdown-it) 渲染库均使用本地固定版本，不依赖第三方 CDN。预览禁用原始 HTML，避免文章中的 HTML 在持有 Token 的后台执行；HTML 原文在保存时保持不变，博客前台仍由 Docsify 渲染。
 
 ### 文章管理
 
 - 从专题树选择文章，显示标题和实际文件名，也会列出未登记卡片的 Markdown。
-- 新建文章时选择专题、填写标题、文件名、摘要及 Markdown 正文，可在「封面、标签与排序」中设置封面和首页推荐。
+- 新建文章时选择专题、填写标题、文件名、摘要及 Markdown 正文，可在「文章属性、封面、标签与排序」中编辑卡片信息；编辑已有文章时默认折叠属性区，可折叠左侧目录获得更宽的工作区。
 - 作者默认使用 `Teletele`，在文章编辑页可填写单篇覆盖作者；留空恢复全局默认。
-- 支持实时分栏预览、源码和预览模式、粘贴截图直接上传并插入链接、从图片库选图。
+- 文章、专题概览和首页共用 Markdown 编辑器，支持语法高亮、行号、格式工具栏、实时分栏预览、源码和预览模式、全屏写作、粘贴或拖拽图片自动上传并插入 GitHub Raw Markdown、从图片库选图。全屏中仍可保存并发布。
+- 快捷键：Ctrl/⌘ + S 保存并发布，Ctrl/⌘ + Shift + F 全屏，Esc 退出全屏，F9 切换分栏；Ctrl/⌘ + B、I、Z 等用于格式和撤销操作。
 - 「保存并发布」把 Markdown 正文、标题元数据和卡片配置 `docs/assets/catalog.json` 放在同一个 Git 提交中。删除文章时同步移除卡片与首页推荐。
 - 已有文件路径保持稳定。修改所属专题会调整卡片展示关系而非移动文件；已有文章的改名、移动涉及外部链接，暂时在 Git 中手工操作。
 
